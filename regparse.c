@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "state.h"
+#include "test.h"
 
 int main() {
-	printf("hello\n");
+	condTest01();
 	return 0;
 }
