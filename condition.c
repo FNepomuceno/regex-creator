@@ -30,6 +30,13 @@ CondNode *newCond(CondType type, int negate, char arg1, char arg2) {
 	return result;
 }
 
+CondNode *addCond(CondNode *oldCond, CondType type,
+	int negate, char arg1, char arg2) {
+	if(oldCond == NULL) return newCond(type, negate, arg1, arg2);
+	CondNode *result = newCond(type, negate, arg1, arg2);
+	return appendCond(oldCond, result);
+}
+
 void cleanCond(CondNode *cond) {
 	CondNode *cur = cond;
 	while(cur != NULL) {

@@ -13,5 +13,7 @@ struct PathNode {
 
 int satisfiesPath(char, PathNode *);
 PathNode *nextPath(PathNode *);
+PathNode *addPath(PathNode *, StateNode *, CondNode *);
+void cleanPath(PathNode *);
 
 #endif

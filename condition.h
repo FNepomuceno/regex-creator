@@ -13,8 +13,7 @@ struct CondNode {
 
 int meetsCond(char, CondNode *);
 CondNode *nextCond(CondNode *);
-CondNode *appendCond(CondNode *, CondNode *);
-CondNode *newCond(CondType, int, char, char);
+CondNode *addCond(CondNode *, CondType, int, char, char);
 void cleanCond(CondNode *);
 int matches(char, char, char);
 int inrange(char, char, char);

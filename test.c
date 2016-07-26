@@ -3,17 +3,36 @@
 #include "path.h"
 #include "condition.h"
 
-static const char *truetext = "true";
-static const char *falsetext = "false";
-
 void shouldBe(const char *text, const char *expected,
 	const char *actual) {
-	printf("%s: should be %s, is actually %s\n",
-		text, expected, actual);
+	int diff = strcmp(expected, actual);
+	if(diff == 0) {
+		printf("%s: Test Passed\n", text);
+	} else {
+		printf("%s: Test Failed\n", text);
+		printf("Output should be \"%s\", but is currently "
+			"\"%s\"\n", expected, actual);
+	}
+}
+
+void endTest() {
+	printf("End Test\n\n");
 }
 
 const char *truthText(int truth) {
-	return truth != 0? truetext: falsetext;
+	return truth != 0? "true": "false";
+}
+
+/*
+ * Text Test 1: Displays test passed and failed messages
+ */
+void textTest01() {
+	printf("Text Test 1: Pass/Fail Messages\n");
+	printf("Pass message:\n");
+	shouldBe("Message", "correct", "correct");
+	printf("Fail message:\n");
+	shouldBe("Message", "correct", "incorrect");
+	endTest();
 }
 
 /*
@@ -23,18 +42,17 @@ const char *truthText(int truth) {
  */
 void condTest01() {
 	printf("Condition Test 1: [A-Za-z]\n");
-	PathNode *path = malloc(sizeof(PathNode));
-	path->conds = 
-		appendCond(newCond(inrange, 0, 'a', 'z'),
-		newCond(inrange, 0, 'A', 'Z'));
+	CondNode *cond = addCond(NULL, inrange, 0, 'A', 'Z');
+	cond = addCond(cond, inrange, 0, 'a', 'z');
+	PathNode *path = addPath(NULL, NULL, cond);
 	
 	int test01 = satisfiesPath('B', path);
 	int test02 = satisfiesPath('x', path);
 	int test03 = satisfiesPath('_', path);
-	shouldBe("Test 1 with 'B'", truetext, truthText(test01));
-	shouldBe("Test 1 with 'x'", truetext, truthText(test02));
-	shouldBe("Test 1 with '_'", falsetext, truthText(test03));
+	shouldBe("Test 1 with 'B'", "true", truthText(test01));
+	shouldBe("Test 1 with 'x'", "true", truthText(test02));
+	shouldBe("Test 1 with '_'", "false", truthText(test03));
+	endTest();
 
-	cleanCond(path->conds);
-	free(path);
+	cleanPath(path);
 }
