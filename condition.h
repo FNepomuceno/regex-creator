@@ -4,16 +4,11 @@
 typedef struct CondNode  CondNode;
 typedef int (*CondType)(char, char, char);
 
-struct CondNode {
-	CondType type;
-	int ifnegate;
-	char arg1, arg2;
-	CondNode *nextcond;
-};
-
-int meetsCond(char, CondNode *);
-CondNode *nextCond(CondNode *);
-CondNode *addCond(CondNode *, CondType, int, char, char);
+int satisfiesCond(char, CondNode *);
+CondNode *nextOrCond(CondNode *);
+CondNode *nextAndCond(CondNode *);
+CondNode *addBranchCond(CondNode *, int , CondNode *);
+CondNode *newCond(CondType, int, char, char);
 void cleanCond(CondNode *);
 int matches(char, char, char);
 int inrange(char, char, char);

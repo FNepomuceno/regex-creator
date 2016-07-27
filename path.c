@@ -4,14 +4,7 @@
 #include "condition.h"
 
 int satisfiesPath(char input, PathNode *path) {
-	CondNode *cond = path->conds;
-	while(cond != NULL) {
-		if(meetsCond(input, cond)) {
-			return 1; // true
-		}
-		cond = nextCond(cond);
-	}
-	return 0; // false
+	return satisfiesCond(input, path->conds);
 }
 
 PathNode *nextPath(PathNode *path) {

@@ -3,5 +3,6 @@
 
 void textTest01();
 void condTest01();
+void condTest02();
 
 #endif

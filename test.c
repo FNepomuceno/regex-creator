@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "path.h"
 #include "condition.h"
+#include "stak.h"
+//#define __DEBUG__
 
 void shouldBe(const char *text, const char *expected,
 	const char *actual) {
@@ -42,9 +44,14 @@ void textTest01() {
  */
 void condTest01() {
 	printf("Condition Test 1: [A-Za-z]\n");
-	CondNode *cond = addCond(NULL, inrange, 0, 'A', 'Z');
-	cond = addCond(cond, inrange, 0, 'a', 'z');
+	CondStakNode *stak = startStak();
+	stak = addOr(stak);
+	stak = addCond(stak, inrange, 0, 'A', 'Z');
+	stak = addCond(stak, inrange, 0, 'a', 'z');
+	
+	CondNode *cond = extractCond(stak);
 	PathNode *path = addPath(NULL, NULL, cond);
+	cleanStak(stak);
 	
 	int test01 = satisfiesPath('B', path);
 	int test02 = satisfiesPath('x', path);
@@ -52,6 +59,50 @@ void condTest01() {
 	shouldBe("Test 1 with 'B'", "true", truthText(test01));
 	shouldBe("Test 1 with 'x'", "true", truthText(test02));
 	shouldBe("Test 1 with '_'", "false", truthText(test03));
+	endTest();
+
+	cleanPath(path);
+}
+
+void startTest() {
+#ifdef __DEBUG__
+	printf("\nstart test\n");
+#endif
+}
+
+void condTest02() {
+	printf("Condition Test 2: Tree of conditions\n");
+	CondStakNode *stak = startStak();
+	stak = addOr(stak); stak = addAnd(stak);
+	stak = addCond(stak, inrange, 0, 'A', 'Z');
+	stak = addOr(stak); stak = addAnd(stak);
+	stak = addCond(stak, inrange, 0, 'A', 'N');
+	stak = addCond(stak, inrange, 0, 'A', 'F');
+	stak = addCond(stak, inrange, 0, 'V', 'Z');
+	stak = addOr(stak); stak = addAnd(stak);
+	stak = addCond(stak, inrange, 0, 'a', 'z');
+	stak = addCond(stak, inrange, 0, 'o', 'u');
+	stak = addCond(stak, matches, 0, '_', 0);
+	
+	CondNode *cond = extractCond(stak);
+	PathNode *path = addPath(NULL, NULL, cond);
+	cleanStak(stak);
+	
+	int test01 = satisfiesPath('D', path);
+	int test02 = satisfiesPath('P', path);
+	int test03 = satisfiesPath('Y', path);
+	int test04 = satisfiesPath('b', path);
+	int test05 = satisfiesPath('s', path);
+	int test06 = satisfiesPath('%', path);
+	int test07 = satisfiesPath('_', path);
+
+	shouldBe("Test 1 with 'D'", "true", truthText(test01));
+	shouldBe("Test 1 with 'P'", "false", truthText(test02));
+	shouldBe("Test 1 with 'Y'", "true", truthText(test03));
+	shouldBe("Test 1 with 'b'", "false", truthText(test04));
+	shouldBe("Test 1 with 's'", "true", truthText(test05));
+	shouldBe("Test 1 with '%'", "false", truthText(test06));
+	shouldBe("Test 1 with '_'", "true", truthText(test07));
 	endTest();
 
 	cleanPath(path);
