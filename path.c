@@ -3,6 +3,12 @@
 #include "path.h"
 #include "condition.h"
 
+struct PathNode {
+	StateNode *dst;
+	CondNode *conds;
+	PathNode *nextpath;
+};
+
 int satisfiesPath(char input, PathNode *path) {
 	return satisfiesCond(input, path->conds);
 }
@@ -12,25 +18,31 @@ PathNode *nextPath(PathNode *path) {
 	return path->nextpath;
 }
 
-PathNode *appendPath(PathNode *oldPath, PathNode *newPath) {
+static PathNode *appendPath(PathNode *oldPath, PathNode *newPath) {
 	if(newPath == NULL) return oldPath;
 	newPath->nextpath = oldPath;
 	return newPath;
 }
 
-PathNode *newPath(StateNode *dest, CondNode *conds) {
+static PathNode *newPath(CondNode *conds) {
 	PathNode *result = (PathNode *) malloc(sizeof(PathNode));
-	result->dst = dest;
+	result->dst = NULL;
 	result->conds = conds;
 	result->nextpath = NULL;
 	return result;
 }
 
-PathNode *addPath(PathNode *oldPath,
-	StateNode *dest, CondNode *conds) {
-	if(oldPath == NULL) return newPath(dest, conds);
-	PathNode *result = newPath(dest, conds);
+PathNode *addPath(PathNode *oldPath, CondNode *conds) {
+	if(oldPath == NULL) return newPath(conds);
+	PathNode *result = newPath(conds);
 	return appendPath(oldPath, result);
+}
+
+PathNode *addDestToPath(PathNode *path, StateNode *dest) {
+	if(path->dst == NULL) {
+		path->dst = dest;
+	}
+	return path;
 }
 
 void cleanPath(PathNode *path) {

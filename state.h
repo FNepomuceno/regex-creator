@@ -2,15 +2,13 @@
 #define STATE_H
 
 typedef struct StateNode StateNode;
-typedef struct RegexNode RegexNode;
 typedef struct PathNode  PathNode;
+typedef struct RegexNode RegexNode;
+typedef struct CondNode  CondNode;
 
-struct StateNode {
-	RegexNode *matchedRegexes;
-	PathNode *paths;
-	int id;
-};
-
+StateNode *newState(RegexNode *);
+StateNode *addStatePath(StateNode *, StateNode *, CondNode *);
+int stateId(StateNode *);
 PathNode *nextAppropriatePath(char, PathNode *);
 
 #endif

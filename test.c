@@ -50,7 +50,7 @@ void condTest01() {
 	stak = addCond(stak, inrange, 0, 'a', 'z');
 	
 	CondNode *cond = extractCond(stak);
-	PathNode *path = addPath(NULL, NULL, cond);
+	PathNode *path = addPath(NULL, cond);
 	cleanStak(stak);
 	
 	int test01 = satisfiesPath('B', path);
@@ -85,7 +85,7 @@ void condTest02() {
 	stak = addCond(stak, matches, 0, '_', 0);
 	
 	CondNode *cond = extractCond(stak);
-	PathNode *path = addPath(NULL, NULL, cond);
+	PathNode *path = addPath(NULL, cond);
 	cleanStak(stak);
 	
 	int test01 = satisfiesPath('D', path);
@@ -106,4 +106,18 @@ void condTest02() {
 	endTest();
 
 	cleanPath(path);
+}
+
+void pathTest01() {/*
+	CondStakNode *stak = startStak();
+	stak = addCond(stak, inrange, 0, 'A', 'Z');
+	
+	CondNode *cond = extractCond(stak);
+	cleanStak(stak);
+
+	StateNode *root = newState(NULL);
+	StateNode *branch1 = newState(NULL);
+	StateNode *branch2 = newState(NULL);
+	PathNode *path = addPath(NULL, cond);
+	cleanPath(path);*/
 }
