@@ -9,6 +9,7 @@ int satisfiesPath(char, PathNode *);
 PathNode *nextPath(PathNode *);
 PathNode *addPath(PathNode *, CondNode *);
 PathNode *addDestToPath(PathNode *, StateNode *);
+StateNode *getPathDest(PathNode *);
 void cleanPath(PathNode *);
 
 #endif

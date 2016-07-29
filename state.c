@@ -6,18 +6,38 @@
 struct StateNode {
 	RegexNode *matchedRegexes;
 	PathNode *paths;
-	int id;
+	int id, links;
 };
 
 static int id_gen = 0;
+static void cleanState(StateNode *);
 
 StateNode *newState(RegexNode *matchedRegexes) {
 	StateNode *result = malloc(sizeof(StateNode));
 	result->matchedRegexes = matchedRegexes;
 	result->paths = NULL;
 	result->id = id_gen;
+	result->links = 1;
 	id_gen++;
 	return result;
+}
+
+static StateNode *addLink(StateNode *state) {
+	state->links += 1;
+	return state;
+}
+
+static void *removeLink(StateNode *state) {
+	if(state == NULL) return;
+	state->links -= 1;
+	if(state->links == 0) {
+		cleanState(state);
+	}
+}
+
+StateNode *removeState(StateNode *state) {
+	removeLink(state);
+	return NULL;
 }
 
 StateNode *addStatePath(StateNode *src, StateNode *dst,
@@ -25,11 +45,16 @@ StateNode *addStatePath(StateNode *src, StateNode *dst,
 	PathNode *path = addPath(src->paths, conds);
 	path = addDestToPath(path, dst);
 	src->paths = path;
+	addLink(dst);
 	return src;
 }
 
 int stateId(StateNode *state) {
 	return state == NULL? -1: state->id;
+}
+
+PathNode *getPaths(StateNode *state) {
+	return state->paths;
 }
 
 PathNode *nextAppropriatePath(char input, PathNode *start) {
@@ -41,6 +66,9 @@ PathNode *nextAppropriatePath(char input, PathNode *start) {
 	return NULL;
 }
 
-void cleanState(StateNode *state) {
-	//cleanPath(path);
+static void cleanState(StateNode *state) {
+	if(state == NULL) return;
+	//TODO: clean regexes
+	cleanPath(state->paths);
+	free(state);
 }

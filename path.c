@@ -45,11 +45,17 @@ PathNode *addDestToPath(PathNode *path, StateNode *dest) {
 	return path;
 }
 
+StateNode *getPathDest(PathNode *path) {
+	if(path == NULL) return NULL;
+	return path->dst;
+}
+
 void cleanPath(PathNode *path) {
 	PathNode *cur = path;
 	while(cur != NULL) {
 		PathNode *prev = cur;
 		cleanCond(prev->conds);
+		removeState(prev->dst);
 		cur = nextPath(cur);
 		free(prev);
 	}
