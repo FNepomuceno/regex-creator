@@ -63,7 +63,8 @@ void condTest01() {
 	
 	passed += shouldBe("Test with 'B'", "true", truthText(test01));
 	passed += shouldBe("Test with 'x'", "true", truthText(test02));
-	passed += shouldBe("Test with '_'", "false", truthText(test03));
+	passed += shouldBe("Test with '_'", "false",
+		truthText(test03));
 	endTest(passed, total);
 
 	cleanPath(path);
@@ -102,12 +103,16 @@ void condTest02() {
 	int test07 = satisfiesPath('_', path);
 	int passed = 0, total = 7;
 
-	passed += shouldBe("Test with 'D'", "true", truthText(test01));
-	passed += shouldBe("Test with 'P'", "false", truthText(test02));
+	passed += shouldBe("Test with 'D'", "true",
+		truthText(test01));
+	passed += shouldBe("Test with 'P'", "false",
+		truthText(test02));
 	passed += shouldBe("Test with 'Y'", "true", truthText(test03));
-	passed += shouldBe("Test with 'b'", "false", truthText(test04));
+	passed += shouldBe("Test with 'b'", "false",
+		truthText(test04));
 	passed += shouldBe("Test with 's'", "true", truthText(test05));
-	passed += shouldBe("Test with '%'", "false", truthText(test06));
+	passed += shouldBe("Test with '%'", "false",
+		truthText(test06));
 	passed += shouldBe("Test with '_'", "true", truthText(test07));
 	endTest(passed, total);
 
@@ -124,13 +129,13 @@ int testNum(char *text, int expected, int actual) {
 PathNode *testPath(char *text, char input, PathNode *path,
 	StateNode *expected, int *correct) {
 	PathNode *cur = nextAppropriatePath(input, path);
-	StateNode *actual = getPathDest(path);
+	StateNode *actual = getPathDest(cur);
 	*correct += testNum(text, stateId(expected), stateId(actual));
 	return nextPath(cur);
 }
 
 void stateTest01() {
-	printf("State Test 2: Graph of states\n");
+	printf("State Test 1: Graph of states\n");
 	StateNode *node0 = newState(NULL);
 	StateNode *node1 = newState(NULL);
 	StateNode *node2 = newState(NULL);
@@ -144,23 +149,68 @@ void stateTest01() {
 	int passed = 0, total = 8;
 	path = testPath("Root's Branch 1", 'a', path, node1, &passed);
 	path = testPath("Root's Branch 2", 'a', path, node2, &passed);
-	path = testPath("Root Has No More Branches", 'a', path, NULL,
-		&passed);
+	path = testPath("Root Has No More Branches", 'a',
+		path, NULL, &passed);
 	path = getPaths(node1);
-	path = testPath("Branch 1's Branch", 'a', path, node3, &passed);
+	path = testPath("Branch 1's Branch", 'a', path,
+		node3, &passed);
 	path = testPath("Branch 1 Has No More Branches",
 		'a', path, NULL, &passed);
 	path = getPaths(node2);
-	path = testPath("Branch 2's Branch", 'a', path, node3, &passed);
+	path = testPath("Branch 2's Branch", 'a', path,
+		node3, &passed);
 	path = testPath("Branch 2 Has No More Branches",
 		'a', path, NULL, &passed);
 	path = getPaths(node3);
-	path = testPath("Branch 3 Has No Branches", 'a', path, NULL,
-		&passed);
+	path = testPath("Branch 3 Has No Branches", 'a',
+		path, NULL, &passed);
 	endTest(passed, total);
 
 	node0 = removeState(node0);
 	node1 = removeState(node1);
 	node2 = removeState(node2);
 	node3 = removeState(node3);
+}
+
+static CondNode *sT02cond01() {
+	CondStakNode *stak = startStak();
+	stak = addCond(stak, inrange, 0, 'a', 'z');
+	CondNode *result = extractCond(stak);
+	cleanStak(stak);
+	return result;
+}
+
+static CondNode *sT02cond02() {
+	CondStakNode *stak = startStak();
+	stak = addCond(stak, inrange, 0, 'A', 'Z');
+	CondNode *result = extractCond(stak);
+	cleanStak(stak);
+	return result;
+}
+
+static void sT02state01(StateNode **res0, StateNode **res1,
+	StateNode **res2) {
+	*res0 = newState(NULL);
+	*res1 = newState(NULL);
+	*res2 = newState(NULL);
+	addStatePath(*res0, *res1, sT02cond01());
+	addStatePath(*res0, *res2, sT02cond02());
+}
+
+void stateTest02() {
+	printf("State Test 2: Distinguishing case\n");
+	StateNode *node0, *node1, *node2;
+	sT02state01(&node0, &node1, &node2);
+
+	PathNode *path = getPaths(node0);
+	int passed = 0, total = 4;
+	testPath("Uppercase", 'A', path, node2, &passed);
+	testPath("Lowercase", 'a', path, node1, &passed);
+	testPath("Digit", '8', path, NULL, &passed);
+	testPath("Special Character", '*', path, NULL, &passed);
+	endTest(passed, total);
+
+	node0 = removeState(node0);
+	node1 = removeState(node1);
+	node2 = removeState(node2);
 }

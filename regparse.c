@@ -7,5 +7,6 @@ int main() {
 	condTest01();
 	condTest02();
 	stateTest01();
+	stateTest02();
 	return 0;
 }
