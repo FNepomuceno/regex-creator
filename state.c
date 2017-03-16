@@ -1,74 +1,46 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "state.h"
-#include "path.h"
 
+typedef struct StateNode StateNode;
+typedef struct PathNode PathNode;
+typedef struct CondNode CondNode;
+
+//"state/state.c"
 struct StateNode {
-	RegexNode *matchedRegexes;
+	char *result_type;
 	PathNode *paths;
-	int id, links;
-};
-
-static int id_gen = 0;
-static void cleanState(StateNode *);
-
-StateNode *newState(RegexNode *matchedRegexes) {
-	StateNode *result = malloc(sizeof(StateNode));
-	result->matchedRegexes = matchedRegexes;
-	result->paths = NULL;
-	result->id = id_gen;
-	result->links = 1;
-	id_gen++;
-	return result;
 }
 
-static StateNode *addLink(StateNode *state) {
-	state->links += 1;
-	return state;
+//TODO: Implement all these functions, will ya?
+
+//Make a new state
+//A null result type -> INVALID_STATE
+StateNode *newState(char *result_type);
+
+//If dst is null, send error and return
+//If condition is null, send error and return
+//Make new path with dst and condition
+//add new path to src's paths
+PathNode *linkToState(PathNode *src_paths, StateNode *dst,
+		CondNode *condition);
+
+//"state/state.c"
+struct PathNode {
+	PathNode *next_path;
+	StateNode *dst_state;
+	CondNode *condition;
 }
 
-static void *removeLink(StateNode *state) {
-	if(state == NULL) return;
-	state->links -= 1;
-	if(state->links == 0) {
-		cleanState(state);
-	}
-}
+//Make a new path
+PathNode *newPath(StateNode *dst, CondNode *cond);
 
-StateNode *removeState(StateNode *state) {
-	removeLink(state);
-	return NULL;
-}
+//If to is null, return from
+//If from is null, return to
+//If from's state and to's state are the same, merge paths
+//If last is an else, add before that
+//Otherwise add to end
+PathNode *addPath(PathNode *from, PathNode *to);
 
-StateNode *addStatePath(StateNode *src, StateNode *dst,
-	CondNode *conds) {
-	PathNode *path = addPath(src->paths, conds);
-	path = addDestToPath(path, dst);
-	src->paths = path;
-	addLink(dst);
-	return src;
-}
-
-int stateId(StateNode *state) {
-	return state == NULL? -1: state->id;
-}
-
-PathNode *getPaths(StateNode *state) {
-	return state->paths;
-}
-
-PathNode *nextAppropriatePath(char input, PathNode *start) {
-	PathNode *path = start;
-	while(path != NULL) {
-		if(satisfiesPath(input, path)) return path;
-		path = nextPath(path);
-	}
-	return NULL;
-}
-
-static void cleanState(StateNode *state) {
-	if(state == NULL) return;
-	//TODO: clean regexes
-	cleanPath(state->paths);
-	free(state);
-}
+//If either are null, send error and return
+//If dst states are different, send error and return
+PathNode *mergePaths(PathNode *a, PathNode *b);
