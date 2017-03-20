@@ -1,4 +1,5 @@
 #ifdef CONDITION_NODE_MODULE
+
 static const int OR_OP = 2;
 static const int AND_OP = 3;
 static const int IGNORE_OP = 4;
@@ -31,14 +32,4 @@ static int isBranchCond(CondNode *);
 int isEquivalent(CondNode *, CondNode *);
 static int dataEquivalent(CondNode *, CondNode *);
 
-struct CondNode {
-	CondFunc *func;
-	CondNode *chld1, *chld2; // children of node
-	int op_flag; // and or flag
-	int neg_flag; // negate flag
-	char arg1, arg2; // arguments for func
-};
-
-static CondNode nil_obj;
-static CondNode *nil = &nil_obj;
 #endif

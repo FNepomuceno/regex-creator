@@ -7,9 +7,20 @@
 #include <stdlib.h>
 
 #include "node.h"
-#include "bool.h"
+#include "../utils/bool.h"
 #include "function.h"
 #include "node_module.h"
+
+struct CondNode {
+	CondFunc *func;
+	CondNode *chld1, *chld2; // children of node
+	int op_flag; // and or flag
+	int neg_flag; // negate flag
+	char arg1, arg2; // arguments for func
+};
+
+static CondNode nil_obj;
+static CondNode *nil = &nil_obj;
 
 static CondNode *newNodeLeaf(CondFunc func, char arg1,
 		char arg2) {
