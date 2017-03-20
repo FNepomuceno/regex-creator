@@ -7,29 +7,30 @@ static const int YES_NEGATE = 5;
 static const int NO_NEGATE = 6;
 static const int IGNORE_NEGATE = 7;
 
-static CondNode *newNodeLeaf(CondFunc, char, char);
-static CondNode *newNodeBranch(CondNode *, CondNode *, int);
-//public access?
-void cleanCondNode(CondNode *data);
+static CondNode *newNodeLeaf(CondFunc func, char arg1, char arg2);
+static CondNode *newNodeBranch(CondNode *node1, CondNode *node2,
+	int op_flag);
+void cleanCondNode(CondNode *node);
 
-//package access
-CondNode *mergeNodes(CondNode *, CondNode *, int);
-static CondNode *linkNodes(CondNode *, CondNode *, int);
-static CondNode *branchNodes(CondNode *, CondNode *, int);
-//package access
-CondNode *negateNode(CondNode *);
+static CondNode *mergeNodes(CondNode *node1, CondNode *node2,
+	int op_flag);
+static CondNode *linkNodes(CondNode *node1, CondNode *node2,
+	int op_flag);
+static CondNode *branchNodes(CondNode *node1, CondNode *node2,
+	int op_flag);
+static CondNode *negateNode(CondNode *node);
 
-int evaluateCond(CondNode *, char);
-static int combineEvals(int, int, int);
-static int evaluateFunc(CondNode *, char);
-static int applyCondition(CondNode *, char);
+static int evaluateCond(CondNode *node, char input);
+static int combineEvals(int bool1, int bool2, int op_flag);
+static int evaluateFunc(CondNode *node, char input);
 
-static int isNegated(int);
-static int isLeafCond(CondNode *);
-static int isLinkCond(CondNode *);
-static int isBranchCond(CondNode *);
+static int isNegated(CondNode *node);
+static int isLeafCond(CondNode *node);
+static int isLinkCond(CondNode *node);
+static int isBranchCond(CondNode *node);
 
-int isEquivalent(CondNode *, CondNode *);
-static int dataEquivalent(CondNode *, CondNode *);
+int isEquivalent(CondNode *node1, CondNode *node2);
+static int dataEquivalent(CondNode *node1, CondNode *node2);
+static int haveFuncsEquivalent(CondNode *node1, CondNode *node2);
 
 #endif

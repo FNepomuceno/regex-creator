@@ -4,7 +4,7 @@
 //condition.h
 typedef struct CondNode CondNode;
 typedef struct CondMakr CondMakr;
-typedef (int)CondFunc(char, char, char);//TODO: look up syntax
+typedef int CondFunc(char, char, char);
 static const int OR_OP = 1;
 static const int AND_OP = 0;
 static const int IGNORE_OP = -1;

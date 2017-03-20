@@ -11,7 +11,7 @@ struct StateNode {
 	PathNode *paths;
 }
 
-//TODO: Implement all these functions, will ya?
+//TODO: Implement all these functions
 
 //Make a new state
 //A null result type -> INVALID_STATE

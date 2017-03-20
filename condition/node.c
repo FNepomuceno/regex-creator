@@ -7,16 +7,16 @@
 #include <stdlib.h>
 
 #include "node.h"
-#include "../utils/bool.h"
-#include "function.h"
 #include "node_module.h"
+#include "function/data.h"
+#include "function/info.h"
+#include "../utils/bool.h"
 
 struct CondNode {
-	CondFunc *func;
-	CondNode *chld1, *chld2; // children of node
-	int op_flag; // and or flag
-	int neg_flag; // negate flag
-	char arg1, arg2; // arguments for func
+	CondNode *chld1, *chld2;
+	int op_flag;
+	int neg_flag;
+	FuncData *func_data;
 };
 
 static CondNode nil_obj;
@@ -25,13 +25,11 @@ static CondNode *nil = &nil_obj;
 static CondNode *newNodeLeaf(CondFunc func, char arg1,
 		char arg2) {
 	CondNode *newNode = malloc(sizeof (CondNode));
-	newNode->func = func;
+	newNode->func_data = newFuncData(func, arg1, arg2);
 	newNode->chld1 = nil;
 	newNode->chld2 = nil;
 	newNode->op_flag = IGNORE_OP;
 	newNode->neg_flag = NO_NEGATE;
-	newNode->arg1 = arg1;
-	newNode->arg2 = arg2;
 	return newNode;
 }
 
@@ -39,31 +37,30 @@ static CondNode *newNodeBranch(CondNode *node1, CondNode *node2,
 		int op_flag) {
 	assert(node1 != NULL && node2 != NULL);
 	CondNode *newNode = malloc(sizeof (CondNode));
-	newNode->func = 0;
-	newNode->chld1 = node1;
-	newNode->chld2 = node2;
+	newNode->func_data = nil_data;
 	newNode->op_flag = op_flag;
 	newNode->neg_flag = IGNORE_NEGATE;
-	newNode->arg1 = '\0';
-	newNode->arg2 = '\0';
+	newNode->chld1 = node1;
+	newNode->chld2 = node2;
 	return newNode;
 }
 
-void cleanCondNode(CondNode *data) {
-	assert(data != NULL);
-	if(data == nil) {
+void cleanCondNode(CondNode *node) {
+	assert(node != NULL);
+	if(node == nil) {
 		return;
 	}
-	cleanCondNode(data->chld1);
-	cleanCondNode(data->chld2);
-	free(data);
+	cleanFuncData(node->func_data);
+	cleanCondNode(node->chld1);
+	cleanCondNode(node->chld2);
+	free(node);
 }
 
 CondNode *mergeNodes(CondNode *node1, CondNode *node2,
 		int op_flag) {	
 	assert(node1 != NULL && node2 != NULL);
 	if(node1 == nil || node2 == nil) {
-		printf("ERROR: CANNOT COMBINE NIL NODES\n");
+		fprintf(stderr, "ERROR: CANNOT COMBINE NIL NODES\n");
 		return nil;
 	}
 	if(isLeafCond(node1)) {
@@ -89,28 +86,28 @@ static CondNode *branchNodes(CondNode *node1, CondNode *node2,
 	return result;
 }
 
-CondNode *negateNode(CondNode *data) {
-	assert(data != NULL);
-	assert(data->neg_flag == YES_NEGATE ||
-		data->neg_flag == NO_NEGATE);
-	if(data->neg_flag == NO_NEGATE) {
-		data->neg_flag = YES_NEGATE;
+CondNode *negateNode(CondNode *node) {
+	assert(node != NULL);
+	assert(node->neg_flag == YES_NEGATE ||
+		node->neg_flag == NO_NEGATE);
+	if(node->neg_flag == NO_NEGATE) {
+		node->neg_flag = YES_NEGATE;
 	} else {
-		data->neg_flag = NO_NEGATE;
+		node->neg_flag = NO_NEGATE;
 	}
-	return data;
+	return node;
 }
 
-int evaluateCond(CondNode *cond, char input) {
-	assert(cond != NULL);
-	if(isBranchCond(cond)) {
-		return combineEvals(evaluateCond(cond->chld1, input),
-			evaluateCond(cond->chld2, input), cond->op_flag);
-	} else if(isLinkCond(cond)) {
-		return combineEvals(evaluateFunc(cond, input),
-			evaluateCond(cond->chld2, input), cond->op_flag);
+int evaluateCond(CondNode *node, char input) {
+	assert(node != NULL);
+	if(isBranchCond(node)) {
+		return combineEvals(evaluateCond(node->chld1, input),
+			evaluateCond(node->chld2, input), node->op_flag);
+	} else if(isLinkCond(node)) {
+		return combineEvals(evaluateFunc(node, input),
+			evaluateCond(node->chld2, input), node->op_flag);
 	} else {
-		return evaluateFunc(cond, input);
+		return evaluateFunc(node, input);
 	}
 }
 
@@ -125,18 +122,15 @@ static int combineEvals(int bool1, int bool2, int op_flag) {
 	}
 }
 
-static int evaluateFunc(CondNode *cond, char input) {
-	assert(cond != NULL && cond != nil);
-	return boolXor(applyCondition(cond, input),
-		isNegated(cond->neg_flag));
+static int evaluateFunc(CondNode *node, char input) {
+	assert(node != NULL && node != nil);
+	return boolXor(applyFunc(node->func_data, input),
+		isNegated(node));
 }
 
-static int applyCondition(CondNode *cond, char input) {
-	return cond->func(input, cond->arg1, cond->arg2)?
-		TRUE_BOOL: FALSE_BOOL;
-}
-
-static int isNegated(int negate_flag) {
+static int isNegated(CondNode *node) {
+	assert(node != NULL && node != nil);
+	int negate_flag = node->neg_flag;
 	assert(negate_flag == YES_NEGATE || negate_flag == NO_NEGATE);
 	if(negate_flag == YES_NEGATE) {
 		return TRUE_BOOL;
@@ -145,19 +139,19 @@ static int isNegated(int negate_flag) {
 	}
 }
 
-static int isBranchCond(CondNode *cond) {
-	assert(cond != NULL);
-	return (cond->chld1 != nil) && (cond->chld2 != nil);
+static int isBranchCond(CondNode *node) {
+	assert(node != NULL && node != nil);
+	return (node->chld1 != nil) && (node->chld2 != nil);
 }
 
-static int isLinkCond(CondNode *cond) {
-	assert(cond != NULL);
-	return (cond->chld1 == nil) && (cond->chld2 != nil);
+static int isLinkCond(CondNode *node) {
+	assert(node != NULL && node != nil);
+	return (node->chld1 == nil) && (node->chld2 != nil);
 }
 
-static int isLeafCond(CondNode *cond) {
-	assert(cond != NULL);
-	return (cond->chld1 == nil) && (cond->chld2 == nil);
+static int isLeafCond(CondNode *node) {
+	assert(node != NULL && node != nil);
+	return (node->chld1 == nil) && (node->chld2 == nil);
 }
 
 int isEquivalent(CondNode *node1, CondNode *node2) {
@@ -176,41 +170,24 @@ int isEquivalent(CondNode *node1, CondNode *node2) {
 static int dataEquivalent(CondNode *node1, CondNode *node2) {
 	assert(node1 != NULL && node2 != NULL);
 	assert(node1 != nil && node2 != nil);
-	return node1->func == node2->func &&
-		node1->op_flag == node2->op_flag &&
+	return node1->op_flag == node2->op_flag &&
 		node1->neg_flag == node2->neg_flag &&
-		node1->arg1 == node2->arg1 &&
-		node1->arg2 == node2->arg2;
+		haveFuncsEquivalent(node1, node2) == TRUE_BOOL;
+}
+
+static int haveFuncsEquivalent(CondNode *node1, CondNode *node2) {
+	if(isBranchCond(node1) && isBranchCond(node2)) {
+		return TRUE_BOOL;
+	}
+	if(!isBranchCond(node1) && !isBranchCond(node2)) {
+		return toBool(areFuncsEquivalent(node1->func_data,
+			node2->func_data));
+	}
+	return FALSE_BOOL;
 }
 
 #ifdef TEST
-static void testNodes();
-static void testCondEval();
-static void testCondEquivalence();
-static void testLeafEval();
-static void testOrLinkEval();
-static void testAndLinkEval();
-static void testMultiLinkEval();
-static void testBranchEval();
-static void testNegateEval();
-static void testLeafEquivalence();
-static void testLinkEquivalence();
-static void testLinkSizeEquivalence();
-static void testBranchEquivalence();
-static void testNegateEquivalence();
-
-static CondNode *getTestLeaf();
-static CondNode *getTestOrLink();
-static CondNode *getTestAndLink();
-static CondNode *getTestMultiLink();
-static CondNode *getTestBranch();
-static CondNode *getTestNegate();
-static CondNode *getTestDiffLeaf();
-static CondNode *getTestDiffLink();
-static CondNode *getTestDiffSizeLink();
-static CondNode *getTestDiffBranch();
-static CondNode *getTestNegateLeaf();
-static CondNode *getTestDoubleNegateLeaf();
+#include "node_test.h"
 
 #define test(x) printf("%s:%d TEST `%s\' %s\n", __FILE__,\
 	__LINE__, #x, (x)? "PASSED": "FAILED");
@@ -224,6 +201,7 @@ static void testNodes() {
 	printf("Starting Node Tests\n");
 	testCondEval();
 	testCondEquivalence();
+	testCondMerge();
 }
 
 static void testCondEval() {
@@ -241,7 +219,15 @@ static void testCondEquivalence() {
 	testLinkEquivalence();
 	testLinkSizeEquivalence();
 	testBranchEquivalence();
+	testMismatchEquivalence();
 	testNegateEquivalence();
+	printf("\n");
+}
+
+static void testCondMerge() {
+	testLeafMerge();
+	testLinkMerge();
+	testBranchMerge();
 	printf("\n");
 }
 
@@ -264,7 +250,8 @@ static void testOrLinkEval() {
 	test(evaluateCond(test, 'H') == TRUE_BOOL);
 	test(evaluateCond(test, 'i') == TRUE_BOOL);
 	test(evaluateCond(test, '_') == TRUE_BOOL);
-	test(evaluateCond(test, '5') == FALSE_BOOL);
+	test(evaluateCond(test, '5') == TRUE_BOOL);
+	test(evaluateCond(test, '#') == FALSE_BOOL);
 	cleanCondNode(test);
 }
 
@@ -333,7 +320,7 @@ static void testNegateEval() {
 	test(evaluateCond(test, '\\') == TRUE_BOOL);
 	test(evaluateCond(test, 'e') == FALSE_BOOL);
 	test(evaluateCond(test, 'Z') == FALSE_BOOL);
-	test(evaluateCond(test, '#') == FALSE_BOOL);
+	test(evaluateCond(test, '$') == FALSE_BOOL);
 	cleanCondNode(test);
 }
 
@@ -430,6 +417,18 @@ static CondNode *getTestDiffBranch() {
 	return branchNodes(test1, test2, AND_OP);
 }
 
+static void testMismatchEquivalence() {
+	CondNode *test1 = getTestLeaf();
+	CondNode *test2 = getTestOrLink();
+	CondNode *test3 = getTestBranch();
+	test(isEquivalent(test1, test2) == FALSE_BOOL);
+	test(isEquivalent(test1, test3) == FALSE_BOOL);
+	test(isEquivalent(test2, test3) == FALSE_BOOL);
+	cleanCondNode(test1);
+	cleanCondNode(test2);
+	cleanCondNode(test3);
+}
+
 static void testNegateEquivalence() {
 	printf("Testing negate node equivalence\n");
 	CondNode *test1 = getTestLeaf();
@@ -449,6 +448,162 @@ static CondNode *getTestNegateLeaf() {
 
 static CondNode *getTestDoubleNegateLeaf() {
 	return negateNode(getTestNegateLeaf());
+}
+
+static void testLeafMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeLeaf();
+	CondNode *test3 = mergeNodes(test1, test2, OR_OP);
+	CondNode *test4 = getTestLeafToLeafMerge();
+	test(isEquivalent(test3, test4) == TRUE_BOOL);
+	cleanCondNode(test3);
+	cleanCondNode(test4);
+}
+
+static CondNode *getTestMergerLeaf() {
+	return newNodeLeaf(equalsChar, ' ', 0);
+}
+
+static CondNode *getTestMergeeLeaf() {
+	return newNodeLeaf(equalsChar, '\t', 0);
+}
+
+static CondNode *getTestLeafToLeafMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeLeaf();
+	return linkNodes(test1, test2, OR_OP);
+}
+
+static void testLinkMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeLink();
+	CondNode *test3 = mergeNodes(test1, test2, OR_OP);
+	CondNode *test4 = getTestLeafToLinkMerge();
+	cleanCondNode(test3);
+	cleanCondNode(test4);
+
+	CondNode *test5 = getTestMergerLink();
+	CondNode *test6 = getTestMergeeLeaf();
+	CondNode *test7 = mergeNodes(test5, test6, OR_OP);
+	CondNode *test8 = getTestLinkToLeafMerge();
+	cleanCondNode(test7);
+	cleanCondNode(test8);
+
+	CondNode *test9 = getTestMergerLink();
+	CondNode *test10 = getTestMergeeLink();
+	CondNode *test11 = mergeNodes(test9, test10, OR_OP);
+	CondNode *test12 = getTestLinkToLinkMerge();
+	cleanCondNode(test11);
+	cleanCondNode(test12);
+}
+
+static CondNode *getTestMergerLink() {
+	CondNode *test1 = newNodeLeaf(equalsChar, '8', 0);
+	CondNode *test2 = newNodeLeaf(equalsChar, '0', 0);
+	return linkNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestMergeeLink() {
+	CondNode *test1 = newNodeLeaf(equalsChar, 'G', 0);
+	CondNode *test2 = newNodeLeaf(equalsChar, 'O', 0);
+	return linkNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestLeafToLinkMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeLink();
+	return linkNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestLinkToLeafMerge() {
+	CondNode *test1 = getTestMergerLink();
+	CondNode *test2 = getTestMergeeLeaf();
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestLinkToLinkMerge() {
+	CondNode *test1 = getTestMergerLink();
+	CondNode *test2 = getTestMergeeLink();
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static void testBranchMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeBranch();
+	CondNode *test3 = mergeNodes(test1, test2, OR_OP);
+	CondNode *test4 = getTestLeafToBranchMerge();
+	cleanCondNode(test3);
+	cleanCondNode(test4);
+
+	CondNode *test5 = getTestMergerLink();
+	CondNode *test6 = getTestMergeeBranch();
+	CondNode *test7 = mergeNodes(test5, test6, OR_OP);
+	CondNode *test8 = getTestLinkToBranchMerge();
+	cleanCondNode(test7);
+	cleanCondNode(test8);
+
+	CondNode *test9 = getTestMergerBranch();
+	CondNode *test10 = getTestMergeeLeaf();
+	CondNode *test11 = mergeNodes(test9, test10, OR_OP);
+	CondNode *test12 = getTestBranchToLeafMerge();
+	cleanCondNode(test11);
+	cleanCondNode(test12);
+
+	CondNode *test13 = getTestMergerBranch();
+	CondNode *test14 = getTestMergeeLink();
+	CondNode *test15 = mergeNodes(test13, test14, OR_OP);
+	CondNode *test16 = getTestBranchToLinkMerge();
+	cleanCondNode(test15);
+	cleanCondNode(test16);
+
+	CondNode *test17 = getTestMergerBranch();
+	CondNode *test18 = getTestMergeeBranch();
+	CondNode *test19 = mergeNodes(test17, test18, OR_OP);
+	CondNode *test20 = getTestBranchToBranchMerge();
+	cleanCondNode(test19);
+	cleanCondNode(test20);
+}
+
+static CondNode *getTestMergerBranch() {
+	CondNode *test1 = newNodeLeaf(equalsChar, '!', 0);
+	CondNode *test2 = newNodeLeaf(equalsChar, '?', 0);
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestMergeeBranch() {
+	CondNode *test1 = newNodeLeaf(equalsChar, '[', 0);
+	CondNode *test2 = newNodeLeaf(equalsChar, '}', 0);
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestLeafToBranchMerge() {
+	CondNode *test1 = getTestMergerLeaf();
+	CondNode *test2 = getTestMergeeBranch();
+	return linkNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestLinkToBranchMerge() {
+	CondNode *test1 = getTestMergerLink();
+	CondNode *test2 = getTestMergeeBranch();
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestBranchToLeafMerge() {
+	CondNode *test1 = getTestMergerBranch();
+	CondNode *test2 = getTestMergeeLeaf();
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestBranchToLinkMerge() {
+	CondNode *test1 = getTestMergerBranch();
+	CondNode *test2 = getTestMergeeLink();
+	return branchNodes(test1, test2, OR_OP);
+}
+
+static CondNode *getTestBranchToBranchMerge() {
+	CondNode *test1 = getTestMergerBranch();
+	CondNode *test2 = getTestMergeeBranch();
+	return branchNodes(test1, test2, OR_OP);
 }
 
 #endif

@@ -1,10 +1,6 @@
-.PHONY: all clean test CharstringTest
-
-srcs := *.c
-cc := gcc
+.PHONY: all clean CharstringTest todo
 
 all:
-	@$(cc) $(srcs) -g -o test
 
 CharstringTest:
 	@gcc charstring.c utils/bool.c -g -o CharstringTest
@@ -12,10 +8,8 @@ CharstringTest:
 	@./CharstringTest | grep "FAILED";:
 	@rm CharstringTest
 
-test:
-	make
-	valgrind ./test
-	make clean
+todo:
+	@grep TODO *.c */*.c
 
 clean:
 	@rm test

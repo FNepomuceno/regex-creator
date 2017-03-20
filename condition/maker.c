@@ -4,7 +4,7 @@
 //condition.h
 typedef struct CondNode CondNode;
 typedef struct CondMakr CondMakr;
-typedef int CondFunc(char, char, char);//TODO: look up syntax
+typedef int CondFunc(char, char, char);
 static const int OR_OP = 1;
 static const int AND_OP = 0;
 static const int IGNORE_OP = -1;
@@ -106,6 +106,7 @@ CondMakr *addCond(CondMakr *stak, CondNode *node) {
 	return addNodeToMakr(node, stak);
 }
 
+//TODO: test all the functions in here
 int main() {
 	return 0;
 }

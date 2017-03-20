@@ -37,6 +37,7 @@ int main() {
 	return 0;
 }
 
+//TODO: Make all these tests pass
 int testIsValidCharString() {
 	char *test1 = "a";
 	char *test2 = "\\";
