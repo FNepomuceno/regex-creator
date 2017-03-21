@@ -9,7 +9,7 @@ CharstringTest:
 	@rm CharstringTest
 
 todo:
-	@grep TODO *.c */*.c
+	@grep TODO *.c */*.c */*/*.c;:
 
 clean:
 	@rm test

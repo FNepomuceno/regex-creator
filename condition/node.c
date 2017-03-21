@@ -1,6 +1,7 @@
 #define CONDITION_PACKAGE
 #define CONDITION_NODE_MODULE
-#define TEST
+#define test(x) printf("%s:%d TEST `%s\' %s\n", __FILE__,\
+	__LINE__, #x, (x)? "PASSED": "FAILED");
 
 #include <assert.h>
 #include <stdio.h>
@@ -20,14 +21,13 @@ struct CondNode {
 };
 
 static CondNode nil_obj;
-static CondNode *nil = &nil_obj;
+CondNode *nil_node = &nil_obj;
 
-static CondNode *newNodeLeaf(CondFunc func, char arg1,
-		char arg2) {
+CondNode *newNodeLeaf(CondFunc func, char arg1, char arg2) {
 	CondNode *newNode = malloc(sizeof (CondNode));
 	newNode->func_data = newFuncData(func, arg1, arg2);
-	newNode->chld1 = nil;
-	newNode->chld2 = nil;
+	newNode->chld1 = nil_node;
+	newNode->chld2 = nil_node;
 	newNode->op_flag = IGNORE_OP;
 	newNode->neg_flag = NO_NEGATE;
 	return newNode;
@@ -47,7 +47,7 @@ static CondNode *newNodeBranch(CondNode *node1, CondNode *node2,
 
 void cleanCondNode(CondNode *node) {
 	assert(node != NULL);
-	if(node == nil) {
+	if(node == nil_node) {
 		return;
 	}
 	cleanFuncData(node->func_data);
@@ -59,9 +59,9 @@ void cleanCondNode(CondNode *node) {
 CondNode *mergeNodes(CondNode *node1, CondNode *node2,
 		int op_flag) {	
 	assert(node1 != NULL && node2 != NULL);
-	if(node1 == nil || node2 == nil) {
+	if(node1 == nil_node || node2 == nil_node) {
 		fprintf(stderr, "ERROR: CANNOT COMBINE NIL NODES\n");
-		return nil;
+		return nil_node;
 	}
 	if(isLeafCond(node1)) {
 		return linkNodes(node1, node2, op_flag);
@@ -123,13 +123,13 @@ static int combineEvals(int bool1, int bool2, int op_flag) {
 }
 
 static int evaluateFunc(CondNode *node, char input) {
-	assert(node != NULL && node != nil);
+	assert(node != NULL && node != nil_node);
 	return boolXor(applyFunc(node->func_data, input),
 		isNegated(node));
 }
 
 static int isNegated(CondNode *node) {
-	assert(node != NULL && node != nil);
+	assert(node != NULL && node != nil_node);
 	int negate_flag = node->neg_flag;
 	assert(negate_flag == YES_NEGATE || negate_flag == NO_NEGATE);
 	if(negate_flag == YES_NEGATE) {
@@ -140,25 +140,25 @@ static int isNegated(CondNode *node) {
 }
 
 static int isBranchCond(CondNode *node) {
-	assert(node != NULL && node != nil);
-	return (node->chld1 != nil) && (node->chld2 != nil);
+	assert(node != NULL && node != nil_node);
+	return (node->chld1 != nil_node) && (node->chld2 != nil_node);
 }
 
 static int isLinkCond(CondNode *node) {
-	assert(node != NULL && node != nil);
-	return (node->chld1 == nil) && (node->chld2 != nil);
+	assert(node != NULL && node != nil_node);
+	return (node->chld1 == nil_node) && (node->chld2 != nil_node);
 }
 
 static int isLeafCond(CondNode *node) {
-	assert(node != NULL && node != nil);
-	return (node->chld1 == nil) && (node->chld2 == nil);
+	assert(node != NULL && node != nil_node);
+	return (node->chld1 == nil_node) && (node->chld2 == nil_node);
 }
 
 int isEquivalent(CondNode *node1, CondNode *node2) {
 	assert(node1 != NULL && node2 != NULL);
 	if(node1 == node2) {
 		return TRUE_BOOL;
-	} else if(node1 == nil || node2 == nil) {
+	} else if(node1 == nil_node || node2 == nil_node) {
 		return FALSE_BOOL;
 	} else if(!dataEquivalent(node1, node2)) {
 		return FALSE_BOOL;
@@ -169,7 +169,7 @@ int isEquivalent(CondNode *node1, CondNode *node2) {
 
 static int dataEquivalent(CondNode *node1, CondNode *node2) {
 	assert(node1 != NULL && node2 != NULL);
-	assert(node1 != nil && node2 != nil);
+	assert(node1 != nil_node && node2 != nil_node);
 	return node1->op_flag == node2->op_flag &&
 		node1->neg_flag == node2->neg_flag &&
 		haveFuncsEquivalent(node1, node2) == TRUE_BOOL;
@@ -186,18 +186,14 @@ static int haveFuncsEquivalent(CondNode *node1, CondNode *node2) {
 	return FALSE_BOOL;
 }
 
-#ifdef TEST
-#include "node_test.h"
-
-#define test(x) printf("%s:%d TEST `%s\' %s\n", __FILE__,\
-	__LINE__, #x, (x)? "PASSED": "FAILED");
-
+#ifdef TEST_CONDITION_NODE
 int main() {
 	testNodes();
 	return 0;
 }
+#endif
 
-static void testNodes() {
+void testNodes() {
 	printf("Starting Node Tests\n");
 	testCondEval();
 	testCondEquivalence();
@@ -605,5 +601,3 @@ static CondNode *getTestBranchToBranchMerge() {
 	CondNode *test2 = getTestMergeeBranch();
 	return branchNodes(test1, test2, OR_OP);
 }
-
-#endif

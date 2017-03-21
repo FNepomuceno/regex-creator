@@ -1,7 +1,7 @@
 #ifndef FUNCTION_DATA_H
 #define FUNCTION_DATA_H
 
-#include "condfunc.h"
+typedef int CondFunc(char, char, char);
 typedef struct FuncData FuncData;
 extern FuncData *nil_data;
 

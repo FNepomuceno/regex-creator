@@ -1,7 +1,7 @@
 #ifndef FUNCTION_INFO_H
 #define FUNCTION_INFO_H
 
-#include "condfunc.h"
+typedef int CondFunc(char, char, char);
 typedef struct FuncInfo FuncInfo;
 int isValidFunc(const FuncInfo *info, char arg1, char arg2);
 int isEqualInfo(const FuncInfo *info1, const FuncInfo *info2);
