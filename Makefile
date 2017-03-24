@@ -1,15 +1,12 @@
-.PHONY: all clean CharstringTest todo
+.PHONY: all clean todo test redo
 
 all:
 
-CharstringTest:
-	@gcc charstring.c utils/bool.c -g -o CharstringTest
-	@valgrind ./CharstringTest 1> /dev/null;:
-	@./CharstringTest | grep "FAILED";:
-	@rm CharstringTest
+test:
 
 todo:
 	@grep TODO *.c */*.c */*/*.c;:
 
 clean:
-	@rm test
+
+redo: clean all
