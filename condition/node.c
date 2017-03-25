@@ -1,10 +1,8 @@
 #define CONDITION_PACKAGE
 #define CONDITION_NODE_MODULE
-#define TEST_CONDITION_NODE
+//#define TEST_CONDITION_NODE
 
-#include <stdio.h>
 #include <stdlib.h>
-
 #include "node.h"
 #include "node_module.h"
 #include "tags.h"
@@ -23,7 +21,6 @@ struct CondNode {
 static CondNode nil_obj;
 CondNode *nil_node = &nil_obj;
 
-//TODO: switch the flags with those tags
 CondNode *newCondNode(CondFunc func, char arg1, char arg2,
 		const NegationTag *neg_tag) {
 	CondNode *newNode = malloc(sizeof (CondNode));
@@ -252,7 +249,6 @@ int main() {
 #endif
 
 void testNodes() {
-	printf("Starting Node Tests\n");
 	testPropertyFuncs();
 	testMergingFuncs();
 	testMergeNodes();
@@ -263,7 +259,6 @@ void testNodes() {
 	testEvaluateCond();
 }
 
-//TODO: remove '' from name when test cases replaced
 static void testPropertyFuncs() {
 	testIsNullCond();
 	testIsNegatedCond();

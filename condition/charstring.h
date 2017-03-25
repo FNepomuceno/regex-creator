@@ -3,4 +3,6 @@
 
 int isValidCharString(char *str);
 
+void testIsValidCharString();
+
 #endif

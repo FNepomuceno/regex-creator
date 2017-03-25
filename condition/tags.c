@@ -22,24 +22,6 @@ int isUsableOperationTag(const OperationTag *tag) {
 		tag == AND_OPERATION;
 }
 
-//temporary function for refactoring
-int getOperationTagId(const OperationTag *tag) {
-	if(!isValidOperationTag(tag)) return INVALID_TAG;
-	return tag->identifier;
-}
-const OperationTag *getOpTagFromId(int id) {
-	if(id == OR_OPERATION->identifier) {
-		return OR_OPERATION;
-	}
-	if(id == AND_OPERATION->identifier) {
-		return AND_OPERATION;
-	}
-	if(id == IGNORE_OPERATION->identifier) {
-		return IGNORE_OPERATION;
-	}
-	return INVALID_OPERATION;
-}
-
 typedef struct NegationTag NegationTag;
 struct NegationTag {
 	int identifier;
@@ -58,10 +40,4 @@ int isValidNegationTag(const NegationTag *tag) {
 int isUsableNegationTag(const NegationTag *tag) {
 	return tag == YES_NEGATION ||
 		tag == NO_NEGATION;
-}
-
-//temporary function for refactoring
-int getNegationTagId(const NegationTag *tag) {
-	if(!isValidNegationTag(tag)) return INVALID_TAG;
-	return tag->identifier;
 }

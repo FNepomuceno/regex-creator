@@ -1,6 +1,7 @@
 #ifndef UTILS_TEST_H
 #define UTILS_TEST_H
 
+#include <stdio.h>
 #define TEST(x) printf("%s:%d TEST `%s` %s\n", __FILE__,\
 	__LINE__, #x, (x)? "PASSED": "FAILED");
 

@@ -1,10 +1,10 @@
-//#define TEST
+//#define TEST_CONDITION_CHARSTRING
 
-#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../utils/bool.h"
+#include "../utils/test.h"
 
 int isValidCharString(char *str);
 int isEmptyCharString(char *str);
@@ -106,22 +106,20 @@ int isValidRange(char *str) {
 }
 
 void testIsValidCharString();
-void testBareCharValid();
-void testEscapedCharValid();
-void testLoneBracketValid();
-void testMisenclosedBracketValid();
-void testLoneLetterCharClassValid();
-void testLoneRangeCharClassValid();
-void testTwoLetterCharClassValid();
-void testDashInCharClassValid();
-void testNegatedCharClassValid();
-void testMultipleInCharClassValid();
+static void testBareCharValid();
+static void testEscapedCharValid();
+static void testLoneBracketValid();
+static void testMisenclosedBracketValid();
+static void testLoneLetterCharClassValid();
+static void testLoneRangeCharClassValid();
+static void testTwoLetterCharClassValid();
+static void testDashInCharClassValid();
+static void testNegatedCharClassValid();
+static void testMultipleInCharClassValid();
 
-#ifdef TEST
+#ifdef TEST_CONDITION_CHARSTRING
 int main() {
-	printf("TEST START\n");
 	testIsValidCharString();
-	printf("TEST OVER\n");
 	return 0;
 }
 #endif
@@ -139,130 +137,130 @@ void testIsValidCharString() {
 	testMultipleInCharClassValid();
 }
 
-void testBareCharValid(){
+static void testBareCharValid(){
 	char *test1 = NULL;
-	assert(isValidCharString(test1) == FALSE_BOOL);
+	TEST(isValidCharString(test1) == FALSE_BOOL);
 
 	char *test2 = "";
-	assert(isValidCharString(test2) == FALSE_BOOL);
+	TEST(isValidCharString(test2) == FALSE_BOOL);
 
 	char *test3 = "a";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 
 	char *test4 = "\\";
-	assert(isValidCharString(test4) == FALSE_BOOL);
+	TEST(isValidCharString(test4) == FALSE_BOOL);
 }
 
-void testEscapedCharValid(){
+static void testEscapedCharValid(){
 	char *test1 = "\\.";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "\\a";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 
 	char *test3 = "\\^";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 
 	char *test4 = "\\W";
-	assert(isValidCharString(test4) == TRUE_BOOL);
+	TEST(isValidCharString(test4) == TRUE_BOOL);
 
 	char *test5 = "\\\\";
-	assert(isValidCharString(test5) == TRUE_BOOL);
+	TEST(isValidCharString(test5) == TRUE_BOOL);
 }
 
-void testLoneBracketValid(){
+static void testLoneBracketValid(){
 	char *test1 = "[";
-	assert(isValidCharString(test1) == FALSE_BOOL);
+	TEST(isValidCharString(test1) == FALSE_BOOL);
 
 	char *test2 = "]";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 
 	char *test3 = "(";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 
 	char *test4 = ")";
-	assert(isValidCharString(test4) == TRUE_BOOL);
+	TEST(isValidCharString(test4) == TRUE_BOOL);
 }
 
-void testMisenclosedBracketValid(){
+static void testMisenclosedBracketValid(){
 	char *test1 = "[]";
-	assert(isValidCharString(test1) == FALSE_BOOL);
+	TEST(isValidCharString(test1) == FALSE_BOOL);
 
 	char *test2 = "[^]";
-	assert(isValidCharString(test2) == FALSE_BOOL);
+	TEST(isValidCharString(test2) == FALSE_BOOL);
 	
 	char *test3 = "[e";
-	assert(isValidCharString(test3) == FALSE_BOOL);
+	TEST(isValidCharString(test3) == FALSE_BOOL);
 
 	char *test4 = "[^";
-	assert(isValidCharString(test4) == FALSE_BOOL);
+	TEST(isValidCharString(test4) == FALSE_BOOL);
 }
 
-void testLoneLetterCharClassValid(){
+static void testLoneLetterCharClassValid(){
 	char *test1 = "[e]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[f]x";
-	assert(isValidCharString(test2) == FALSE_BOOL);
+	TEST(isValidCharString(test2) == FALSE_BOOL);
 }
 
-void testLoneRangeCharClassValid(){
+static void testLoneRangeCharClassValid(){
 	char *test1 = "[\\-a]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[a-\\]";
-	assert(isValidCharString(test2) == FALSE_BOOL);
+	TEST(isValidCharString(test2) == FALSE_BOOL);
 
 	char *test3 = "[u-u]";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 }
 
-void testTwoLetterCharClassValid(){
+static void testTwoLetterCharClassValid(){
 	char *test1 = "[eZ]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[\\c]";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 
 	char *test3 = "[c\\]";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 }
 
-void testDashInCharClassValid(){
+static void testDashInCharClassValid(){
 	char *test1 = "[-#-g]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[#-g-]";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 
 	char *test3 = "[--x]";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 
 	char *test4 = "[x--]";
-	assert(isValidCharString(test4) == FALSE_BOOL);
+	TEST(isValidCharString(test4) == FALSE_BOOL);
 
 	char *test5 = "[i-]";
-	assert(isValidCharString(test5) == TRUE_BOOL);
+	TEST(isValidCharString(test5) == TRUE_BOOL);
 
 	char *test6 = "[-i]";
-	assert(isValidCharString(test6) == TRUE_BOOL);
+	TEST(isValidCharString(test6) == TRUE_BOOL);
 }
 
-void testNegatedCharClassValid(){
+static void testNegatedCharClassValid(){
 	char *test1 = "[^eat]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[^^._]";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 }
 
-void testMultipleInCharClassValid(){
+static void testMultipleInCharClassValid(){
 	char *test1 = "[^bi-n]";
-	assert(isValidCharString(test1) == TRUE_BOOL);
+	TEST(isValidCharString(test1) == TRUE_BOOL);
 
 	char *test2 = "[^H-O-l-y]";
-	assert(isValidCharString(test2) == TRUE_BOOL);
+	TEST(isValidCharString(test2) == TRUE_BOOL);
 
 	char *test3 = "[3Y-e5-8\\]";
-	assert(isValidCharString(test3) == TRUE_BOOL);
+	TEST(isValidCharString(test3) == TRUE_BOOL);
 }

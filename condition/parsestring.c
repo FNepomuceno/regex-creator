@@ -1,104 +1,128 @@
 #define CONDITION_PACKAGE
-//#define TEST
+#define TEST_CONDITION_PARSESTRING
 
-#include <assert.h>
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "charstring.h"
-#include "node.h"
-#include "tags.h"
 #include "../utils/bool.h"
-static const int YES_NEGATE = 0;
-static const int NO_NEGATE = 1;
-static const int IGNORE_NEGATE = -1;
+#include "../utils/test.h"
 
-CondNode *parseCharString(char *str) {
+char *INVALID_STRING = "";
+char *getParseString(char *str) {
 	if(isValidCharString(str) == FALSE_BOOL) {
-		return nil_node;
+		return INVALID_STRING;
 	}
-	return nil_node;
+	return INVALID_STRING;
 }
 
-void testParseCharString();
-void testParseNull();
-void testParseSingleChar();
-void testParseCharCategory();
-void testParseSimpleCharClass();
-void testParseComplexCharClass();
+void cleanParseString(char *str) {
+	if(str != NULL && str != INVALID_STRING) {
+		free(str);
+	}
+}
 
-#ifdef TEST
+//TODO: Make the tests for getParseString() pass
+//TODO: Make the CondList and extractCondList()
+//TODO: Make tests for extractCondList() and make them pass
+//TODO: Put the parseString and condList together
+//	so the Assembler(not yet made) can put them together
+//TODO: Make the Assembler (assembler.c)
+void testGetParseString();
+#ifdef TEST_CONDITION_PARSESTRING
 int main() {
-	testParseCharString();
+	testIsValidCharString();
+	testGetParseString();
 	return 0;
 }
 #endif
 
-void testParseCharString() {
-	testParseNull();
+void testGetParseStringNull();
+void testGetParseStringSingleChar();
+void testGetParseStringCharCategory();
+void testGetParseStringSimpleCharClass();
+void testGetParseStringComplexCharClass();
+void testGetParseString() {
+	testGetParseStringNull();
+	testGetParseStringSingleChar();
+	testGetParseStringCharCategory();
+	testGetParseStringSimpleCharClass();
+	testGetParseStringComplexCharClass();
 }
 
-void testParseNull() {
-	CondNode *test1 = parseCharString(NULL);
-	CondNode *expected1 = nil_node;
-	assert(isEquivalent(test1, expected1) == TRUE_BOOL);
+void testGetParseStringNull() {
+	char *test1 = getParseString(NULL);
+	TEST(strcmp(test1, INVALID_STRING) == 0);
+	cleanParseString(test1);
 
-	CondNode *test2 = parseCharString("");
-	CondNode *expected2 = nil_node;
-	assert(isEquivalent(test2, expected2) == TRUE_BOOL);
+	char *test2 = getParseString("");
+	TEST(strcmp(test2, INVALID_STRING) == 0);
+	cleanParseString(test2);
 }
 
-void testParseSingleChar() {
-	CondNode *test1 = parseCharString("a");
-	CondNode *expected1 = nil_node;
-	assert(isEquivalent(test1, expected1) == TRUE_BOOL);
+void testGetParseStringSingleChar() {
+	char *test1 = getParseString("a");
+	char *expected1 = "#";
+	TEST(strcmp(test1, expected1) == 0);
+	cleanParseString(test1);
 
-	CondNode *test2 = parseCharString("\\\\");
-	CondNode *expected2 = nil_node;
-	assert(isEquivalent(test2, expected2) == TRUE_BOOL);
+	char *test2 = getParseString("\\\\");
+	char *expected2 = "#";
+	TEST(strcmp(test2, expected2) == 0);
+	cleanParseString(test1);
 
-	CondNode *test3 = parseCharString("\\.");
-	CondNode *expected3 = nil_node;
-	assert(isEquivalent(test3, expected3) == TRUE_BOOL);
+	char *test3 = getParseString("\\.");
+	char *expected3 = "#";
+	TEST(strcmp(test3, expected3) == 0);
+	cleanParseString(test1);
 }
 
-void testParseCharCategory() {
-	CondNode *test1 = parseCharString("\\d");
-	CondNode *expected1 = nil_node;
-	assert(isEquivalent(test1, expected1) == TRUE_BOOL);
+void testGetParseStringCharCategory() {
+	char *test1 = getParseString("\\d");
+	char *expected1 = "#";
+	TEST(strcmp(test1, expected1) == 0);
+	cleanParseString(test1);
 
-	CondNode *test2 = parseCharString("\\D");
-	CondNode *expected2 = nil_node;
-	assert(isEquivalent(test2, expected2) == TRUE_BOOL);
+	char *test2 = getParseString("\\D");
+	char *expected2 = "#";
+	TEST(strcmp(test2, expected2) == 0);
+	cleanParseString(test1);
 
-	CondNode *test3 = parseCharString("\\w");
-	CondNode *expected3 = nil_node;
-	assert(isEquivalent(test3, expected3) == TRUE_BOOL);
+	char *test3 = getParseString("\\w");
+	char *expected3 = "#";
+	TEST(strcmp(test3, expected3) == 0);
+	cleanParseString(test1);
 }
 
-void testParseSimpleCharClass() {
-	CondNode *test1 = parseCharString("[C]");
-	CondNode *expected1 = nil_node;
-	assert(isEquivalent(test1, expected1) == TRUE_BOOL);
+void testGetParseStringSimpleCharClass() {
+	char *test1 = getParseString("[C]");
+	char *expected1 = "#";
+	TEST(strcmp(test1, expected1) == 0);
+	cleanParseString(test1);
 
-	CondNode *test2 = parseCharString("[^q]");
-	CondNode *expected2 = nil_node;
-	assert(isEquivalent(test2, expected2) == TRUE_BOOL);
+	char *test2 = getParseString("[^q]");
+	char *expected2 = "#";
+	TEST(strcmp(test2, expected2) == 0);
+	cleanParseString(test1);
 
-	CondNode *test3 = parseCharString("[R-b]");
-	CondNode *expected3 = nil_node;
-	assert(isEquivalent(test3, expected3) == TRUE_BOOL);
+	char *test3 = getParseString("[R-b]");
+	char *expected3 = "#";
+	TEST(strcmp(test3, expected3) == 0);
+	cleanParseString(test1);
 }
 
-void testParseComplexCharClass() {
-	CondNode *test1 = parseCharString("[eZ]");
-	CondNode *expected1 = nil_node;
-	assert(isEquivalent(test1, expected1) == TRUE_BOOL);
+void testGetParseStringComplexCharClass() {
+	char *test1 = getParseString("[eZ]");
+	char *expected1 = "|##";
+	TEST(strcmp(test1, expected1) == 0);
+	cleanParseString(test1);
 
-	CondNode *test2 = parseCharString("[-#-%]");
-	CondNode *expected2 = nil_node;
-	assert(isEquivalent(test2, expected2) == TRUE_BOOL);
+	char *test2 = getParseString("[-#-%!]");
+	char *expected2 = "|#|##";
+	TEST(strcmp(test2, expected2) == 0);
+	cleanParseString(test1);
 
-	CondNode *test3 = parseCharString("[^Wua-h?]");
-	CondNode *expected3 = nil_node;
-	assert(isEquivalent(test3, expected3) == TRUE_BOOL);
+	char *test3 = getParseString("[^Wua-h?]");
+	char *expected3 = "&&###";
+	TEST(strcmp(test3, expected3) == 0);
+	cleanParseString(test1);
 }
