@@ -2,11 +2,12 @@
 #define CONDITION_NODE_H
 
 typedef struct CondNode CondNode;
-typedef struct OperationTag OperationTag;
-typedef struct NegationTag NegationTag;
 void cleanCondNode(CondNode *node);
 
 #ifdef  CONDITION_PACKAGE
+
+typedef struct OperationTag OperationTag;
+typedef struct NegationTag NegationTag;
 
 extern CondNode *nil_node;
 typedef int CondFunc(char, char, char);

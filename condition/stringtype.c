@@ -1,12 +1,12 @@
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "stringtype.h"
 #include "../utils/test.h"
 
 static int isLastCharInStr(char *str);
 static int isCharRange(char *str);
-static int isVerifiedContents(char *str, int num_chars);
+static int getAmtDataInBrackets(char *str, int num_chars);
+static int getNumCharsInBrackets(char *str);
 static int isValidRange(char *str);
 
 int isEmptyCharString(char *str) {
@@ -57,7 +57,24 @@ static int isCharRange(char *str) {
 	return toBool(*(str+1) == '-');
 }
 
-int getAmtDataInBrackets(char *str, int num_chars) {
+int getAmtDataInCharClass(char *str) {
+	char *cur_str;
+	int num_chars;
+	if(isCharClass(str) == TRUE_BOOL) {
+		cur_str = str+1;
+		num_chars = getNumCharsInBrackets(str);
+	}
+	else if(isNegatedCharClass(str) == TRUE_BOOL) {
+		cur_str = str+2;
+		num_chars = getNumCharsInBrackets(str)-1;
+	}
+	else {
+		return -1;
+	}
+	return getAmtDataInBrackets(cur_str, num_chars);
+}
+
+static int getAmtDataInBrackets(char *str, int num_chars) {
 	char *cur_str = str;
 	int cur_num_chars = num_chars;
 	int amt_data = 0;
@@ -78,31 +95,23 @@ int getAmtDataInBrackets(char *str, int num_chars) {
 	return amt_data + cur_num_chars;
 }
 
-static int isVerifiedContents(char *str, int num_chars) {
-	return toBool(getAmtDataInBrackets(str, num_chars) > 0);
+int isValidCharClass(char *str) {
+	return boolAnd(boolOr(isCharClass(str),
+		isNegatedCharClass(str)),
+		toBool(getAmtDataInCharClass(str) > 0));
 }
 
 int isCharClass(char *str) {
-	ASSURE(isClosedBracketExpr(str) == TRUE_BOOL,
-		LOG_ERROR("SHOULD NOT GET HERE");
-		abort();
-	);
-	if(*(str+1) == '^') return FALSE_BOOL;
-	return isVerifiedContents((str+1),
-		getNumCharsInBrackets(str));
+	return boolAnd(isClosedBracketExpr(str),
+		toBool(*(str+1) != '^'));
 }
 
 int isNegatedCharClass(char *str) {
-	ASSURE(isClosedBracketExpr(str) == TRUE_BOOL,
-		LOG_ERROR("SHOULD NOT GET HERE");
-		abort();
-	);
-	if(*(str+1) != '^') return FALSE_BOOL;
-	return isVerifiedContents((str+2),
-		getNumCharsInBrackets(str)-1);
+	return boolAnd(isClosedBracketExpr(str),
+		toBool(*(str+1) == '^'));
 }
 
-int getNumCharsInBrackets(char *str) {
+static int getNumCharsInBrackets(char *str) {
 	if(isClosedBracketExpr(str) == FALSE_BOOL) abort();
 	int result = 0;
 	char *cur_str = str+1;

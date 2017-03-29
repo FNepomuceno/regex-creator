@@ -8,9 +8,9 @@ int isEscapedCharString(char *str);
 int isCharCategory(char *str);
 int isNegatedCharCategory(char *str);
 int isClosedBracketExpr(char *str);
+int isValidCharClass(char *str);
 int isCharClass(char *str);
 int isNegatedCharClass(char *str);
-int getAmtDataInBrackets(char *str, int num_chars);
-int getNumCharsInBrackets(char *str);
+int getAmtDataInCharClass(char *str);
 
 #endif

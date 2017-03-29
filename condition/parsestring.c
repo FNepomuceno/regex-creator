@@ -1,5 +1,5 @@
 #define CONDITION_PACKAGE
-#define TEST_CONDITION_PARSESTRING
+//#define TEST_CONDITION_PARSESTRING
 
 #include <ctype.h>
 #include <string.h>
@@ -26,7 +26,7 @@ char *getParseString(char *str) {
 }
 
 char *setOrLink(char *str, int size) {
-	int numOrs = size/2-1;
+	int numOrs = (size-1)/2;
 	for(int i = 0; i < numOrs; i++) {
 		*(str+i*2) = '|';
 	}
@@ -34,39 +34,30 @@ char *setOrLink(char *str, int size) {
 }
 
 char *setAndLink(char *str, int size) {
-	int numAnds = size/2-1;
+	int numAnds = (size-1)/2;
 	for(int i = 0; i < numAnds; i++) {
 		*(str+i) = '&';
 	}
 	return str;
 }
 
+static char *newParseStringBase(int length) {
+	char *result = malloc((length+1) * sizeof (char));
+	*(result+length) = '\0';
+	memset(result, '#', length);
+	return result;
+}
+
 char *newLinkedDataParseString(char *str) {
-	const int AND_OP = 1;
-	const int OR_OP = 2;
+	int amt_data = getAmtDataInCharClass(str);
+	if(amt_data <= 0) return INVALID_STRING;
 
-	char *start = str+1;
-	int num_chars = getNumCharsInBrackets(str);
-	int used_op = OR_OP;
-	if(*start == '^') {
-		start = start+1;
-		num_chars -= 1;
-		used_op = AND_OP;
+	char *result = newParseStringBase(2*amt_data-1);
+	if(isCharClass(str) == TRUE_BOOL) {
+		return setOrLink(result, 2*amt_data);
+	} else if(isNegatedCharClass(str) == TRUE_BOOL) {
+		return setAndLink(result, 2*amt_data);
 	}
-	int amt_data = getAmtDataInBrackets(start, num_chars);
-	if(amt_data < 0) return INVALID_STRING;
-
-	int size = 2 * amt_data;
-	char *result = malloc(size * sizeof (char));
-	result = memset(result, '#', size-1);
-	*(result+size-1) = '\0';
-	if(used_op == AND_OP) return setAndLink(result, size);
-	else if(used_op == OR_OP) return setOrLink(result, size);
-	ASSURE(0,
-		LOG_ERROR("SHOULD NOT GET HERE");
-		free(result);
-		abort();
-	);
 	return INVALID_STRING;
 }
 
@@ -83,8 +74,6 @@ void cleanParseString(char *str) {
 	}
 }
 
-//TODO: Make the CondList and extractCondList()
-//TODO: Make tests for extractCondList() and make them pass
 //TODO: Put the parseString and condList together
 //	so the Assembler(not yet made) can put them together
 //TODO: Make the Assembler (assembler.c)
