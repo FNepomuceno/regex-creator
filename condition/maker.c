@@ -1,7 +1,7 @@
 #define CONDITION_PACKAGE
 //#define TEST_CONDITION_MAKER
-#include <stdlib.h>
 
+#include <stdlib.h>
 #include "node.h"
 #include "tags.h"
 #include "function/info.h"
@@ -27,9 +27,6 @@ static CondMakr *newCondMakr(CondMakr *parent,
 static CondMakr *simplifyMakr(CondMakr *makr);
 static CondMakr *addNodeSimple(CondNode *node, CondMakr *makr);
 static CondMakr *addNodeToMakr(CondNode *node, CondMakr *makr);
-CondMakr *addOr(CondMakr *makr, CondNode *node);
-CondMakr *addAnd(CondMakr *makr, CondNode *node);
-CondMakr *addCond(CondMakr *makr, CondNode *node);
 
 static CondMakr *newCondMakr(CondMakr *parent,
 		const OperationTag *op_tag) {

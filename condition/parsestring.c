@@ -9,8 +9,15 @@
 #include "../utils/test.h"
 
 char *INVALID_STRING = "";
-char *newSingleCharParseString();
-char *newLinkedDataParseString(char *str);
+
+void cleanParseString(char *str) {
+	if(str != NULL && str != INVALID_STRING) {
+		free(str);
+	}
+}
+
+static char *newSingleCharParseString();
+static char *newLinkedDataParseString(char *str);
 char *getParseString(char *str) {
 	if(isEmptyCharString(str) == TRUE_BOOL) {
 		return INVALID_STRING;
@@ -25,20 +32,9 @@ char *getParseString(char *str) {
 	return newLinkedDataParseString(str);
 }
 
-char *setOrLink(char *str, int size) {
-	int numOrs = (size-1)/2;
-	for(int i = 0; i < numOrs; i++) {
-		*(str+i*2) = '|';
-	}
-	return str;
-}
-
-char *setAndLink(char *str, int size) {
-	int numAnds = (size-1)/2;
-	for(int i = 0; i < numAnds; i++) {
-		*(str+i) = '&';
-	}
-	return str;
+static char *newParseStringBase(int length);
+static char *newSingleCharParseString() {
+	return newParseStringBase(1);
 }
 
 static char *newParseStringBase(int length) {
@@ -48,7 +44,9 @@ static char *newParseStringBase(int length) {
 	return result;
 }
 
-char *newLinkedDataParseString(char *str) {
+static char *setOrLink(char *str, int size);
+static char *setAndLink(char *str, int size);
+static char *newLinkedDataParseString(char *str) {
 	int amt_data = getAmtDataInCharClass(str);
 	if(amt_data <= 0) return INVALID_STRING;
 
@@ -61,22 +59,22 @@ char *newLinkedDataParseString(char *str) {
 	return INVALID_STRING;
 }
 
-char *newSingleCharParseString() {
-	char *result = malloc(2 * sizeof(char));
-	*result = '#';
-	*(result+1) = '\0';
-	return result;
-}
-
-void cleanParseString(char *str) {
-	if(str != NULL && str != INVALID_STRING) {
-		free(str);
+static char *setOrLink(char *str, int size) {
+	int numOrs = (size-1)/2;
+	for(int i = 0; i < numOrs; i++) {
+		*(str+i*2) = '|';
 	}
+	return str;
 }
 
-//TODO: Put the parseString and condList together
-//	so the Assembler(not yet made) can put them together
-//TODO: Make the Assembler (assembler.c)
+static char *setAndLink(char *str, int size) {
+	int numAnds = (size-1)/2;
+	for(int i = 0; i < numAnds; i++) {
+		*(str+i) = '&';
+	}
+	return str;
+}
+
 void testGetParseString();
 #ifdef TEST_CONDITION_PARSESTRING
 int main() {
@@ -85,11 +83,11 @@ int main() {
 }
 #endif
 
-void testGetParseStringNull();
-void testGetParseStringSingleChar();
-void testGetParseStringCharCategory();
-void testGetParseStringSimpleCharClass();
-void testGetParseStringComplexCharClass();
+static void testGetParseStringNull();
+static void testGetParseStringSingleChar();
+static void testGetParseStringCharCategory();
+static void testGetParseStringSimpleCharClass();
+static void testGetParseStringComplexCharClass();
 void testGetParseString() {
 	testGetParseStringNull();
 	testGetParseStringSingleChar();
@@ -98,7 +96,7 @@ void testGetParseString() {
 	testGetParseStringComplexCharClass();
 }
 
-void testGetParseStringNull() {
+static void testGetParseStringNull() {
 	char *test1 = getParseString(NULL);
 	TEST(strcmp(test1, INVALID_STRING) == 0);
 	cleanParseString(test1);
@@ -108,7 +106,7 @@ void testGetParseStringNull() {
 	cleanParseString(test2);
 }
 
-void testGetParseStringSingleChar() {
+static void testGetParseStringSingleChar() {
 	char *test1 = getParseString("a");
 	char *expected1 = "#";
 	TEST(strcmp(test1, expected1) == 0);
@@ -125,7 +123,7 @@ void testGetParseStringSingleChar() {
 	cleanParseString(test3);
 }
 
-void testGetParseStringCharCategory() {
+static void testGetParseStringCharCategory() {
 	char *test1 = getParseString("\\d");
 	char *expected1 = "#";
 	TEST(strcmp(test1, expected1) == 0);
@@ -142,7 +140,7 @@ void testGetParseStringCharCategory() {
 	cleanParseString(test3);
 }
 
-void testGetParseStringSimpleCharClass() {
+static void testGetParseStringSimpleCharClass() {
 	char *test1 = getParseString("[C]");
 	char *expected1 = "#";
 	TEST(strcmp(test1, expected1) == 0);
@@ -159,7 +157,7 @@ void testGetParseStringSimpleCharClass() {
 	cleanParseString(test3);
 }
 
-void testGetParseStringComplexCharClass() {
+static void testGetParseStringComplexCharClass() {
 	char *test1 = getParseString("[eZ]");
 	char *expected1 = "|##";
 	TEST(strcmp(test1, expected1) == 0);

@@ -1,12 +1,5 @@
 #ifdef CONDITION_NODE_MODULE
 
-//static const int OR_OP = 0;
-//static const int AND_OP = 1;
-//static const int IGNORE_OP = -1;
-//static const int YES_NEGATE = 0;
-//static const int NO_NEGATE = 1;
-//static const int IGNORE_NEGATE = -1;
-
 typedef struct CondNode CondNode;
 typedef int CondFunc(char, char, char);
 

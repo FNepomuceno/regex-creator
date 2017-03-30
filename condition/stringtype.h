@@ -1,5 +1,6 @@
 #ifndef CONDITION_STRINGTYPE_H
 #define CONDITION_STRINGTYPE_H
+#ifdef  CONDITION_PACKAGE
 
 #include "../utils/bool.h"
 int isEmptyCharString(char *str);
@@ -13,4 +14,5 @@ int isCharClass(char *str);
 int isNegatedCharClass(char *str);
 int getAmtDataInCharClass(char *str);
 
+#endif
 #endif

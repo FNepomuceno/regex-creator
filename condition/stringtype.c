@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "stringtype.h"
+#include "../utils/bool.h"
 #include "../utils/test.h"
 
 static int isLastCharInStr(char *str);
@@ -57,6 +58,8 @@ static int isCharRange(char *str) {
 	return toBool(*(str+1) == '-');
 }
 
+int isCharClass(char *str);
+int isNegatedCharClass(char *str);
 int getAmtDataInCharClass(char *str) {
 	char *cur_str;
 	int num_chars;

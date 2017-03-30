@@ -1,5 +1,6 @@
 #ifndef CONDITION_TAGS_H
 #define CONDITION_TAGS_H
+#ifdef  CONDITION_PACKAGE
 
 typedef struct OperationTag OperationTag;
 extern const OperationTag *OR_OPERATION;
@@ -17,4 +18,5 @@ extern const NegationTag *INVALID_NEGATION;
 int isValidNegationTag(const NegationTag *tag);
 int isUsableNegationTag(const NegationTag *tag);
 
+#endif
 #endif

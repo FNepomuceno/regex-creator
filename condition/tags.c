@@ -12,6 +12,8 @@ const OperationTag *OR_OPERATION = op_tags+0;
 const OperationTag *AND_OPERATION = op_tags+1;
 const OperationTag *IGNORE_OPERATION = op_tags+2;
 const OperationTag *INVALID_OPERATION;
+
+int isUsableOperationTag(const OperationTag *tag);
 int isValidOperationTag(const OperationTag *tag) {
 	return isUsableOperationTag(tag) ||
 		tag == IGNORE_OPERATION;
@@ -32,6 +34,8 @@ const NegationTag *YES_NEGATION = neg_tags+0;
 const NegationTag *NO_NEGATION = neg_tags+1;
 const NegationTag *IGNORE_NEGATION = neg_tags+2;
 const NegationTag *INVALID_NEGATION;
+
+int isUsableNegationTag(const NegationTag *tag);
 int isValidNegationTag(const NegationTag *tag) {
 	return isUsableNegationTag(tag) ||
 		tag == IGNORE_NEGATION;
