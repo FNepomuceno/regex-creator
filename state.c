@@ -24,7 +24,7 @@ StateNode *newState(char *result_type);
 PathNode *linkToState(PathNode *src_paths, StateNode *dst,
 		CondNode *condition);
 
-//"state/state.c"
+//"state/path.c"
 struct PathNode {
 	PathNode *next_path;
 	StateNode *dst_state;

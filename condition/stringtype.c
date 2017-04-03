@@ -25,6 +25,11 @@ static int isLastCharInStr(char *str) {
 	return toBool(*(str+1) == '\0');
 }
 
+int isWildcardCharString(char *str) {
+	return boolAnd(isLoneCharString(str),
+		toBool(*str == '.'));
+}
+
 int isEscapedCharString(char *str) {
 	return boolAnd(toBool(*str == '\\'),
 		isLastCharInStr(str+1));

@@ -1,0 +1,68 @@
+`a` -> the letter a
+`B` -> the letter B
+`%` -> the letter %
+`.` -> wildcard (matches everything, but newline)
+		(use `(.|\n)` instead to match everything)
+`\.` -> the . character
+` ` -> the space character
+`\^` -> the ^ character (^ is a meta for the line beginning)
+`<` -> the < character (\< is a meta on some systems)
+`\|` -> the | character (| is an or)
+`\*` -> the * character (* is a meta for 0+ repetitions)
+`\+` -> the + character (+ is a meta for 1+ repetitions)
+`\?` -> the ? character (? is a meta for 0-1 repetitions)
+`w` -> the letter w
+`\w` -> an alphanumeric character or [A-Za-z0-9_]
+`\W` -> a non-alphanumeric character
+`\d` -> a digit [0-9]
+`\D` -> a non-digit
+`\s` -> a whitespace char [ \t\n\r]
+`\S` -> a non-whitespace char
+`\t` -> the tab character
+`\n` -> the newline character
+`\r` -> the return carriage character
+`[xyz]` -> the letter x or y or z
+`[A-Z]` -> any character between A and Z (all capital letters)
+`[A-Za-z]` -> any letter capital or lowercase
+`[\d.]` -> the character \ or d or .
+`[^Wua-h?]` -> any character that is not W or u or a character
+				between a and h, or ?
+
+Characters recognized as meta are: ()*+.?[\{|^$
+() -> group
+* -> star
++ -> plus
+. -> wildcard (counted as single char)
+? -> question
+[] -> char class (must have something inside or is invalid)
+\ -> escape char
+{} -> denotes multiple repetitions
+| -> or
+^$ -> line endings
+
+`a` -> "#" [equalsChar, 'a', '\0', NO_NEGATE]
+`B` -> "#" [equalsChar, 'b', '\0', NO_NEGATE]
+`%` -> "#" [equalsChar, '%', '\0', NO_NEGATE]
+`.` -> "#" [equalsChar, '\n', '\0', YES_NEGATE]
+`\.` -> "#" [equalsChar, '.', '\0', NO_NEGATE]
+` ` -> "#" [equalsChar, ' ', '\0', NO_NEGATE]
+`\^` -> "#" [equalsChar, '^', '\0', NO_NEGATE]
+`<` -> "#" [equalsChar, '<', '\0', NO_NEGATE]
+`\|` -> "#" [equalsChar, '|', '\0', NO_NEGATE]
+`\*` -> "#" [equalsChar, '*', '\0', NO_NEGATE]
+`\+` -> "#" [equalsChar, '+', '\0', NO_NEGATE]
+`\?` -> "#" [equalsChar, '?', '\0', NO_NEGATE]
+`w` -> "#" [equalsChar, 'w', '\0', NO_NEGATE]
+`\w` -> "#" [isWordChar, '\0', '\0', NO_NEGATE]
+`\W` -> "#" [isWordChar, '\0', '\0', YES_NEGATE]
+`\d` -> "#" [isDigitChar, '\0', '\0', NO_NEGATE]
+`\D` -> "#" [isDigitChar, '\0', '\0', YES_NEGATE]
+`\s` -> "#" [isWhitespace, '\0', '\0', NO_NEGATE]
+`\S` -> "#" [isWhitespace, '\0', '\0', YES_NEGATE]
+`\t` -> "#" [equalsChar, '\t', '\0', NO_NEGATE]
+`\n` -> "#" [equalsChar, '\n', '\0', NO_NEGATE]
+`\r` -> "#" [equalsChar, '\r', '\0', NO_NEGATE]
+`\D` -> "#" [isDigitChar, '\0', '\0', YES_NEGATE]
+
+More regex stuff
+`^a` matches a string starting with a or includes \na

@@ -137,6 +137,9 @@ CondList *getCondList(char *str) {
 	if(isEmptyCharString(str) == TRUE_BOOL) {
 		return nil_list;
 	}
+	if(isWildcardCharString(str) == TRUE_BOOL) {
+		return newLoneCharList("\n", YES_NEGATION);
+	}
 	if(isLoneCharString(str) == TRUE_BOOL) {
 		return newLoneCharList(str, NO_NEGATION);
 	}
@@ -314,6 +317,15 @@ static void testGetCondListSingleChar() {
 	TEST(listsAreEquivalent(test3, expected3) == TRUE_BOOL);
 	cleanCondList(test3);
 	cleanCondList(expected3);
+
+	CondList *test4 = getCondList(".");
+	CondList *expected4 = initializeList();
+	expected4 = addNodeToList(expected4,
+		newCondNode(equalsChar, '\n', '\0', YES_NEGATION));
+	expected4 = finishList(expected4);
+	TEST(listsAreEquivalent(test4, expected4) == TRUE_BOOL);
+	cleanCondList(test4);
+	cleanCondList(expected4);
 }
 
 static void testGetCondListCharCategory() {
