@@ -155,6 +155,11 @@ static void testGetParseStringSimpleCharClass() {
 	char *expected3 = "#";
 	TEST(strcmp(test3, expected3) == 0);
 	cleanParseString(test3);
+
+	char *test4 = getParseString("[^\\d]");
+	char *expected4 = "#";
+	TEST(strcmp(test4, expected4) == 0);
+	cleanParseString(test4);
 }
 
 static void testGetParseStringComplexCharClass() {

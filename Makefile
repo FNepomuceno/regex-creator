@@ -1,6 +1,6 @@
 .PHONY: all clean todo test redo
 
-files=regex.c testing.c
+files=graphregex.c regex.c testing.c utils/bool.c
 
 all:
 

@@ -3,8 +3,11 @@
 
 #include <stdio.h>
 
-#define TEST_CASE(x) static void test##x ()
-#define USE_CASE(x) { test##x (); }
+#define USE_CASE(name) { test##name (); }
+#define TEST_RES(out_type, name, input) out_type \
+	get##name (input)
+#define TEST_CASE(name) void test##name (void)
+#define USE_RES(name, arg) get##name (arg)
 
 #define TEST(x) printf("%s:%d TEST `%s` %s\n", __FILE__,\
 	__LINE__, #x, (x)? "PASSED": "FAILED");

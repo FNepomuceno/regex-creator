@@ -166,49 +166,19 @@ static CondList *newLoneCharList(char *str,
 	return finishList(result);
 }
 
+static CondList *addEscapedCharNodeToList(CondList *list,
+	char ch, const NegationTag *tag);
 static CondList *newCharCategoryList(char *str) {
 	CondList *result = initializeList();
-	char category_type = *(str+1);
-	CondFunc *result_func = NULL;
-	switch(category_type) {
-		case 'w':
-			result_func = isWordChar;
-			break;
-		case 'd':
-			result_func = isDigitChar;
-			break;
-		case 's':
-			result_func = isWhitespace;
-			break;
-		default:
-			//Default already set to NULL
-			break;
-	}
-	result = addNodeToList(result,
-		newCondNode(result_func, '\0', '\0', NO_NEGATION));
+	result = addEscapedCharNodeToList(result, *(str+1),
+		NO_NEGATION);
 	return finishList(result);
 }
 
 static CondList *newNegatedCharCategoryList(char *str) {
 	CondList *result = initializeList();
-	char category_type = *(str+1);
-	CondFunc *result_func = NULL;
-	switch(category_type) {
-		case 'W':
-			result_func = isWordChar;
-			break;
-		case 'D':
-			result_func = isDigitChar;
-			break;
-		case 'S':
-			result_func = isWhitespace;
-			break;
-		default:
-			//Default already set to NULL
-			break;
-	}
-	result = addNodeToList(result,
-		newCondNode(result_func, '\0', '\0', YES_NEGATION));
+	result = addEscapedCharNodeToList(result, *(str+1),
+		NO_NEGATION);
 	return finishList(result);
 }
 
@@ -219,38 +189,70 @@ static CondList *newEscapedLiteralCharList(char *str) {
 	return finishList(result);
 }
 
+static CondList *addEscapedCharNodeToList(CondList *list,
+		char ch, const NegationTag *tag) {
+	CondNode *new_node;
+	switch(ch) {
+		case '0':
+			new_node = newCondNode(equalsChar, '\0', '\0',
+				tag);
+			break;
+		case 'D':
+			new_node = newCondNode(isDigitChar, '\0', '\0',
+				negateNegationTag(tag));
+			break;
+		case 'S':
+			new_node = newCondNode(isWhitespace, '\0', '\0',
+				negateNegationTag(tag));
+			break;
+		case 'W':
+			new_node = newCondNode(isWordChar, '\0', '\0',
+				negateNegationTag(tag));
+			break;
+		case 'd':
+			new_node = newCondNode(isDigitChar, '\0', '\0',
+				tag);
+			break;
+		case 's':
+			new_node = newCondNode(isWhitespace, '\0', '\0',
+				tag);
+			break;
+		case 'w':
+			new_node = newCondNode(isWordChar, '\0', '\0',
+				tag);
+			break;
+		default:
+			new_node = newCondNode(equalsChar, ch, '\0', tag);
+	}
+	return addNodeToList(list, new_node);
+}
+
 static CondList *newLinkedDataList(char *str) {
-	int amt_data = getAmtDataInCharClass(str);
-	if(amt_data <= 0) return nil_list;
+	int num_chars = getAmtCharsInClass(str);
+	if(num_chars <= 0) return nil_list;
 
 	CondList *result = initializeList();
-	const NegationTag *tag;
-	char *cur_pos;
-	if(isCharClass(str) == TRUE_BOOL) {
-		tag = NO_NEGATION;
-		cur_pos = str+1;
-	} else if(isNegatedCharClass(str) == TRUE_BOOL) {
-		tag = YES_NEGATION;
-		cur_pos = str+2;
-	} else {
-		return nil_list;
-	}
-	for(int i = 0; i < amt_data; i++) {
-		if(*(cur_pos+1) == '-') {
-			char start = *cur_pos;
-			char end = *(cur_pos+2);
-			if(end < start) {
-				cleanCondList(result);
-				return nil_list;
-			}
+	const NegationTag *tag = getCharClassNegationTag(str);
+	int cur_num_chars = num_chars;
+	char *cur_str = getCharClassStartPosition(str);
+	while(cur_num_chars > 0) {
+		int data_size = nextDataSize(cur_str, cur_num_chars);
+		if(data_size == 1) {
 			result = addNodeToList(result,
-				newCondNode(inRangeChar, start, end, tag));
-			cur_pos = cur_pos + 3;
+				newCondNode(equalsChar, *(cur_str), '\0', tag));
+		} else if(data_size == 2) {
+			result = addEscapedCharNodeToList(result,
+				*(cur_str+1), tag);
+		} else if(data_size == 3) {
+			result = addNodeToList(result,
+				newCondNode(inRangeChar, *(cur_str), *(cur_str+2),
+				tag));
 		} else {
-			result = addNodeToList(result,
-				newCondNode(equalsChar, *(cur_pos), '\0', tag));
-			cur_pos = cur_pos + 1;
+			cleanCondList(result);
+			return nil_list;
 		}
+		cur_num_chars -= data_size;
+		cur_str = cur_str + data_size;
 	}
 	return finishList(result);
 }
@@ -384,6 +386,15 @@ static void testGetCondListSimpleCharClass() {
 	TEST(listsAreEquivalent(test3, expected3) == TRUE_BOOL);
 	cleanCondList(test3);
 	cleanCondList(expected3);
+
+	CondList *test4 = getCondList("[^\\d]");
+	CondList *expected4 = initializeList();
+	expected4 = addNodeToList(expected4,
+		newCondNode(isDigitChar, '\0', '\0', YES_NEGATION));
+	expected4 = finishList(expected4);
+	TEST(listsAreEquivalent(test4, expected4) == TRUE_BOOL);
+	cleanCondList(test4);
+	cleanCondList(expected4);
 }
 
 static void testGetCondListComplexCharClass() {
@@ -411,7 +422,7 @@ static void testGetCondListComplexCharClass() {
 	cleanCondList(test2);
 	cleanCondList(expected2);
 
-	CondList *test3 = getCondList("[^Wua-h?]");
+	CondList *test3 = getCondList("[^Wua-h~-]");
 	CondList *expected3 = initializeList();
 	expected3 = addNodeToList(expected3,
 		newCondNode(equalsChar, 'W', '\0', YES_NEGATION));
@@ -420,7 +431,9 @@ static void testGetCondListComplexCharClass() {
 	expected3 = addNodeToList(expected3,
 		newCondNode(inRangeChar, 'a', 'h', YES_NEGATION));
 	expected3 = addNodeToList(expected3,
-		newCondNode(equalsChar, '?', '\0', YES_NEGATION));
+		newCondNode(equalsChar, '~', '\0', YES_NEGATION));
+	expected3 = addNodeToList(expected3,
+		newCondNode(equalsChar, '-', '\0', YES_NEGATION));
 	expected3 = finishList(expected3);
 	TEST(listsAreEquivalent(test3, expected3) == TRUE_BOOL);
 	cleanCondList(test3);

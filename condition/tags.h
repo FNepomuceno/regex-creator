@@ -17,6 +17,7 @@ extern const NegationTag *IGNORE_NEGATION;
 extern const NegationTag *INVALID_NEGATION;
 int isValidNegationTag(const NegationTag *tag);
 int isUsableNegationTag(const NegationTag *tag);
+const NegationTag *negateNegationTag(const NegationTag *tag);
 
 #endif
 #endif

@@ -45,3 +45,13 @@ int isUsableNegationTag(const NegationTag *tag) {
 	return tag == YES_NEGATION ||
 		tag == NO_NEGATION;
 }
+
+const NegationTag *negateNegationTag(const NegationTag *tag) {
+	if(tag == YES_NEGATION) {
+		return NO_NEGATION;
+	}
+	if(tag == NO_NEGATION) {
+		return YES_NEGATION;
+	}
+	return INVALID_NEGATION;
+}
