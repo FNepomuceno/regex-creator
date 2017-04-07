@@ -20,7 +20,7 @@ static int argsValid(int bool1, int bool2) {
 	return argValidBool(bool1) && argValidBool(bool2);
 }
 
-static int boolInvert(int bool_val) {
+int boolInvert(int bool_val) {
 	assert(argValidBool(bool_val));
 	if(bool_val == TRUE_BOOL) {
 		return FALSE_BOOL;

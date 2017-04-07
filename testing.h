@@ -1,6 +1,16 @@
 #ifndef MODULE_TESTING_H
 #define MODULE_TESTING_H
 
+//Regex Package
+//#define TESTING_REGEX
 #define TESTING_GRAPHREGEX
+
+//Condition Package
+//#define TEST_CONDITION_BUILDER
+#define TEST_CONDITION_PACKAGE
+//#define TEST_CONDITION_CONDLIST
+//#define TEST_CONDITION_MAKER
+//#define TEST_CONDITION_NODE
+//#define TEST_CONDITION_PARSESTRING
 
 #endif

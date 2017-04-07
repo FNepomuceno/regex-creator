@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "regex.h"
-#include "testing.h"
+#include "../testing.h"
 
 char **getParseRegex(char *str) {
 	return DEFAULT_STRING_ARRAY;

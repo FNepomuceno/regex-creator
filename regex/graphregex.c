@@ -4,13 +4,14 @@
 #include <string.h>
 #include "chartyperegex.h"
 #include "graphregex.h"
-#include "utils/bool.h"
+#include "../utils/bool.h"
 
 struct GraphRegexList {
 	char *_src_str;
 	int _start_index;
 	int _end_index;
 	char _data_type;
+	int _node_count;
 	GraphList *_next_item;
 	GraphList *_prev_item;
 };
@@ -29,7 +30,9 @@ static void cleanGraphList(GraphList *list) {
 	if(list == NULL || list == nil_graphlist) {
 		return;
 	}
-	list->_prev_item->_next_item = nil_graphlist;
+	if(list->_prev_item != nil_graphlist) {
+		list->_prev_item->_next_item = nil_graphlist;
+	}
 	GraphList *cur_list = list;
 	while(cur_list != nil_graphlist) {
 		GraphList *nxt_list = cur_list->_next_item;
@@ -49,11 +52,16 @@ char *getGraphRegex(char *str) {
 		list = nextGraphListNode(list, cur_str, cur_length);
 		int new_node_length =
 			lengthOfGraphListNode(list->_prev_item);
+		if(new_node_length < 0) {
+			cleanGraphList(list);
+			return INVALID_STRING;
+		}
 		cur_str = cur_str + new_node_length;
 		cur_length -= new_node_length;
 	}
+	char *result = extractStrFromGraphList(list);
 	cleanGraphList(list);
-	return DEFAULT_STRING;
+	return result;
 }
 
 static GraphList *newGraphList(char *str) {
@@ -62,6 +70,7 @@ static GraphList *newGraphList(char *str) {
 	result->_start_index = -1;
 	result->_end_index = 0;
 	result->_data_type = INVALID_CHARTYPE;
+	result->_node_count = 0;
 	result->_next_item = result;
 	result->_prev_item = result;
 	return result;
@@ -71,31 +80,123 @@ static int lengthOfGraphListNode(GraphList *list) {
 	return list->_end_index - list->_start_index;
 }
 
+static char *extractStrFromGraphList(GraphList *list) {
+	if(list->_prev_item != nil_graphlist) {
+		list->_prev_item->_next_item = nil_graphlist;
+	}
+	int str_length = list->_node_count;
+	char *result = malloc((str_length+1) * sizeof(char));
+	*(result+str_length) = '\0';
+
+	GraphList *cur_list = list;
+	int index = 0;
+	while(cur_list != nil_graphlist) {
+		*(result+index) = cur_list->_data_type;
+
+		cur_list = cur_list->_next_item;
+		if(index >= str_length)abort();
+		index++;
+	}
+	return result;
+}
+
 static GraphList *nextGraphListNode(GraphList *list,
 		char *str, int length) {
 	int new_node_length = nextGraphListLength(str, length);
 	char new_node_type = nextGraphListType(str, length);
+	if(new_node_type ==  PLUS_CHARTYPE) {
+		return addPlusNode(list);
+	} else if(new_node_type ==  FIXED_REPETITION_CHARTYPE) {
+		return addFixedRepetitionNode(list, str,
+			new_node_length);
+	} else if(new_node_type ==  VARIABLE_REPETITION_CHARTYPE) {
+		return addVariableRepetitionNode(list, str,
+			new_node_length);
+	} else if(new_node_type ==  INFINITE_REPETITION_CHARTYPE) {
+		return addInfiniteRepetitionNode(list, str,
+			new_node_length);
+	}
 	return addGraphListNode(list, new_node_length,
 		new_node_type);
 }
 
 static int nextGraphListLength(char *str, int length) {
-	return 1;
+	if(hasGraphLoneChar(str, length) == TRUE_BOOL ||
+			hasWildcardChar(str, length) == TRUE_BOOL) {
+		return 1;
+	} else if(hasCharCategory(str, length) == TRUE_BOOL ||
+			hasNegatedCharCategory(str, length) == TRUE_BOOL ||
+			hasNormalEscapedChar(str, length) == TRUE_BOOL) {
+		return 2;
+	} else if(charClassLength(str, length) > 0) {
+		return charClassLength(str, length);
+	} else if(hasOrChar(str, length) == TRUE_BOOL ||
+			hasGroupBeginning(str, length) == TRUE_BOOL ||
+			hasGroupEnding(str, length) == TRUE_BOOL ||
+			hasTextBeginning(str, length) == TRUE_BOOL ||
+			hasTextEnding(str, length) == TRUE_BOOL ||
+			hasKleeneStar(str, length) == TRUE_BOOL ||
+			hasPlusChar(str, length) == TRUE_BOOL ||
+			hasQuestionMark(str, length) == TRUE_BOOL) {
+		return 1;
+	} else if(hasFixedRepetition(str, length) == TRUE_BOOL ||
+			hasVariableRepetition(str, length) == TRUE_BOOL ||
+			hasInfiniteRepetition(str, length) == TRUE_BOOL) {
+		return enclosedBraceLength(str, length);
+	}
+	return -1;
 }
 
 static char nextGraphListType(char *str, int length) {
+	if(hasGraphLoneChar(str, length) == TRUE_BOOL ||
+			hasWildcardChar(str, length) == TRUE_BOOL) {
+		return DATA_CHARTYPE;
+	} else if(hasCharCategory(str, length) == TRUE_BOOL ||
+			hasNegatedCharCategory(str, length) == TRUE_BOOL ||
+			hasNormalEscapedChar(str, length) == TRUE_BOOL) {
+		return DATA_CHARTYPE;
+	} else if(charClassLength(str, length) > 0) {
+		return DATA_CHARTYPE;
+	} else if(hasOrChar(str, length) == TRUE_BOOL) {
+		return OR_CHARTYPE;
+	} else if(hasGroupBeginning(str, length) == TRUE_BOOL) {
+		return BEGIN_GROUP_CHARTYPE;
+	} else if(hasGroupEnding(str, length) == TRUE_BOOL) {
+		return END_GROUP_CHARTYPE;
+	} else if(hasTextBeginning(str, length) == TRUE_BOOL) {
+		return BEGIN_TEXT_CHARTYPE;
+	} else if(hasTextEnding(str, length) == TRUE_BOOL) {
+		return END_TEXT_CHARTYPE;
+	} else if(hasKleeneStar(str, length) == TRUE_BOOL) {
+		return KLEENE_STAR_CHARTYPE;
+	} else if(hasPlusChar(str, length) == TRUE_BOOL) {
+		return PLUS_CHARTYPE;
+	} else if(hasQuestionMark(str, length) == TRUE_BOOL) {
+		return OPTIONAL_MARK_CHARTYPE;
+	} else if(hasFixedRepetition(str, length) == TRUE_BOOL) {
+		return FIXED_REPETITION_CHARTYPE;
+	} else if(hasVariableRepetition(str, length) == TRUE_BOOL) {
+		return VARIABLE_REPETITION_CHARTYPE;
+	} else if(hasInfiniteRepetition(str, length) == TRUE_BOOL) {
+		return INFINITE_REPETITION_CHARTYPE;
+	}
 	return INVALID_CHARTYPE;
 }
 
 static GraphList *addGraphListNode(GraphList *list,
 		int new_length, char data_type) {
-	GraphList *new_list =
-		(list->_start_index < 0)?
-			list:
-			newGraphList(list->_src_str);
+	GraphList *new_list;
+	if(list->_start_index < 0) {
+		list->_start_index = 0;
+		new_list = list;
+	} else {
+		new_list = newGraphList(list->_src_str);
+	}
+	GraphList *result = linkGraphListNodes(list, new_list);
 	new_list = setGraphListNodeData(new_list,
 		new_length, data_type);
-	return linkGraphListNodes(list, new_list);
+	result->_node_count++;
+	return result;
 }
 
 static GraphList *setGraphListNodeData(GraphList *list,
@@ -115,7 +216,88 @@ static GraphList *linkGraphListNodes(GraphList *src,
 	return src;
 }
 
-//TODO: Finish implementation of getGraphRegex
+static GraphList *addPlusNode(GraphList *list) {
+	GraphList *result = addRepeatedNode(list);
+	return addGraphListNode(result, 1, KLEENE_STAR_CHARTYPE);
+}
+
+static GraphList *addRepeatedNode(GraphList *list) {
+	int has_group = FALSE_BOOL;
+	int group_stack = 0;
+	int num_items = 1;
+	GraphList *group_beginning = list->_prev_item;
+	while(group_beginning->_start_index > 0) {
+		if(has_group == FALSE_BOOL &&
+				group_beginning->_data_type == DATA_CHARTYPE) {
+			break;
+		} else if(group_beginning->_data_type ==
+				END_GROUP_CHARTYPE) {
+			group_stack++;
+			has_group = TRUE_BOOL;
+		} else if(group_beginning->_data_type ==
+				BEGIN_GROUP_CHARTYPE) {
+			group_stack--;
+		}
+		if(has_group == TRUE_BOOL && group_stack == 0) {
+			break;
+		}
+		num_items++;
+		group_beginning = group_beginning->_prev_item;
+	}
+
+	GraphList *cur_node = group_beginning;
+	GraphList *result = list;
+	for(int i = 0; i < num_items; i++) {
+		list = addGraphListNode(list, 0,
+			cur_node->_data_type);
+		cur_node = cur_node->_next_item;
+	}
+	return result;
+}
+
+static GraphList *addFixedRepetitionNode(GraphList *list,
+		char *str, int length) {
+	int num_reps = -1;
+	setFixedRepetitions(str, &num_reps);
+
+	GraphList *result = list;
+	for(int i = 2; i <= num_reps; i++) {
+		list = addRepeatedNode(list);
+	}
+	list->_prev_item->_end_index += length;
+	return result;
+}
+
+static GraphList *addVariableRepetitionNode(GraphList *list,
+		char *str, int length) {
+	int min_reps = -1, max_reps = -1;
+	setVariableRepetitions(str, &min_reps, &max_reps);
+
+	GraphList *result = list;
+	for(int i = 2; i <= max_reps; i++) {
+		list = addRepeatedNode(list);
+		if(i == min_reps+1) {
+			list = addGraphListNode(list, length,
+				OPTIONAL_MARK_CHARTYPE);
+		}
+	}
+	list->_prev_item->_end_index += length;
+	return result;
+}
+
+static GraphList *addInfiniteRepetitionNode(GraphList *list,
+		char *str, int length) {
+	int min_reps = -1;
+	setInfiniteRepetitions(str, &min_reps);
+
+	GraphList *result = list;
+	for(int i = 2; i <= min_reps+1; i++) {
+		list = addRepeatedNode(list);
+	}
+	list = addGraphListNode(list, length, KLEENE_STAR_CHARTYPE);
+	return result;
+}
+
 TEST_CASE(GraphRegex);
 #ifdef TESTING_GRAPHREGEX
 int main(void) {
@@ -158,6 +340,18 @@ static TEST_CASE(GetGraphRegexNull) {
 		getGraphRegex(""), INVALID_STRING,
 		strcmp, 0,
 		cleanGraphRegex);
+	COMPARE_TEST(char *, UnfinishedCharClass,
+		getGraphRegex("["), INVALID_STRING,
+		strcmp, 0,
+		cleanGraphRegex);
+	COMPARE_TEST(char *, EmptyCharClass,
+		getGraphRegex("[]"), INVALID_STRING,
+		strcmp, 0,
+		cleanGraphRegex);
+	COMPARE_TEST(char *, EmptyNegatedCharClass,
+		getGraphRegex("[^]"), INVALID_STRING,
+		strcmp, 0,
+		cleanGraphRegex);
 }
 
 static TEST_RES(char *, CopyStr, char *str) {
@@ -169,6 +363,10 @@ static TEST_RES(char *, CopyStr, char *str) {
 static TEST_CASE(GetGraphRegexLoneChar) {
 	COMPARE_TEST(char *, LoneChar,
 		getGraphRegex("a"), USE_RES(CopyStr, "#"),
+		strcmp, 0,
+		cleanGraphRegex);
+	COMPARE_TEST(char *, WildcardChar,
+		getGraphRegex("."), USE_RES(CopyStr, "#"),
 		strcmp, 0,
 		cleanGraphRegex);
 	COMPARE_TEST(char *, EscapedLiteral,
@@ -309,7 +507,7 @@ static TEST_CASE(GetGraphRegexGroup) {
 		cleanGraphRegex);
 	COMPARE_TEST(char *, GroupsNested,
 		getGraphRegex("((a)n(t))"),
-		USE_RES(CopyStr,"(#)#(#)"),
+		USE_RES(CopyStr,"((#)#(#))"),
 		strcmp, 0,
 		cleanGraphRegex);
 }

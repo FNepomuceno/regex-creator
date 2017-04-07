@@ -14,6 +14,7 @@ static void cleanGraphList(GraphList *list);
 
 static GraphList *newGraphList(char *str);
 static int lengthOfGraphListNode(GraphList *list);
+static char *extractStrFromGraphList(GraphList *list);
 static GraphList *nextGraphListNode(GraphList *list,
 	char *str, int length);
 static int nextGraphListLength(char *str, int length);
@@ -24,9 +25,17 @@ static GraphList *linkGraphListNodes(GraphList *src,
 	GraphList *inp);
 static GraphList *setGraphListNodeData(GraphList *list,
 	int length, char data_type);
+static GraphList *addPlusNode(GraphList *list);
+static GraphList *addRepeatedNode(GraphList *list);
+static GraphList *addFixedRepetitionNode(GraphList *list,
+	char *str, int length);
+static GraphList *addVariableRepetitionNode(GraphList *list,
+	char *str, int length);
+static GraphList *addInfiniteRepetitionNode(GraphList *list,
+	char *str, int length);
 
-#include "testing.h"
-#include "utils/test.h"
+#include "../testing.h"
+#include "../utils/test.h"
 static TEST_CASE(GetGraphRegex);
 static TEST_RES(char *, CopyStr, char *str);
 

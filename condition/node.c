@@ -1,13 +1,12 @@
 #define CONDITION_PACKAGE
 #define CONDITION_NODE_MODULE
-//#define TEST_CONDITION_NODE
 
 #include <stdlib.h>
 #include "node.h"
-#include "node_module.h"
 #include "tags.h"
 #include "function/data.h"
 #include "function/info.h"
+#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 

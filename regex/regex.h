@@ -5,7 +5,7 @@ void testRegex();
 
 #ifdef MODULE_REGEX_MOD
 
-#include "utils/test.h"
+#include "../utils/test.h"
 char *INVALID_STRING_ARRAY_DATA[] = {""};
 char *DEFAULT_STRING_ARRAY_DATA[] = {"WRONG"};
 char **INVALID_STRING_ARRAY = INVALID_STRING_ARRAY_DATA;

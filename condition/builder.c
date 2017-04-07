@@ -1,5 +1,4 @@
 #define CONDITION_PACKAGE
-//#define TEST_CONDITION_BUILDER
 
 #include <string.h>
 #include "list.h"
@@ -8,6 +7,7 @@
 #include "parsestring.h"
 #include "tags.h"
 #include "function/info.h"
+#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 

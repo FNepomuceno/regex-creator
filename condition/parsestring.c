@@ -1,10 +1,10 @@
 #define CONDITION_PACKAGE
-//#define TEST_CONDITION_PARSESTRING
 
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include "stringtype.h"
+#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 

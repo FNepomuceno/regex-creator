@@ -1,10 +1,10 @@
 #define CONDITION_PACKAGE
-//#define TEST_CONDITION_MAKER
 
 #include <stdlib.h>
 #include "node.h"
 #include "tags.h"
 #include "function/info.h"
+#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 

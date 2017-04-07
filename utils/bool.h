@@ -8,5 +8,6 @@ int toBool(int eval);
 int boolOr(int, int);
 int boolAnd(int, int);
 int boolXor(int, int);
+int boolInvert(int);
 
 #endif
