@@ -1,7 +1,9 @@
 #ifndef UTILS_TEST_H
 #define UTILS_TEST_H
 
-#include <stdio.h>
+void doNothing(void);
+void printTest(char *, int, char *, int);
+void printError(char *file, int line, char *err_str);
 
 #define USE_CASE(name) { test##name (); }
 #define TEST_RES(out_type, name, input) out_type \
@@ -9,8 +11,9 @@
 #define TEST_CASE(name) void test##name (void)
 #define USE_RES(name, arg) get##name (arg)
 
-#define TEST(x) printf("%s:%d TEST `%s` %s\n", __FILE__,\
-	__LINE__, #x, (x)? "PASSED": "FAILED");
+TEST_RES(char *, CopyStr, char *str);
+
+#define TEST(expr) printTest(__FILE__, __LINE__, #expr, (expr));
 
 #define TEST_TRUE(x) TEST((x) == TRUE_BOOL)
 #define TEST_FALSE(x) TEST((x) == FALSE_BOOL)
@@ -40,8 +43,7 @@
 #endif
 
 #define LOG_ERROR(err_str) { \
-	fprintf(stderr, "%s.%d: %s\n", __FILE__, __LINE__, \
-		(err_str)); \
+	printError(__FILE__, __LINE__, (err_str)); \
 }
 
 #endif

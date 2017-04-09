@@ -1,11 +1,11 @@
 #define CONDITION_PACKAGE
 
+#include "../testing.h"
 #include "builder.h"
 #include "list.h"
 #include "maker.h"
 #include "node.h"
 #include "parsestring.h"
-#include "../testing.h"
 
 CondNode *getCondition(char *str) {
 	return buildCond(str);
@@ -15,9 +15,9 @@ void cleanCondition(CondNode *node) {
 	cleanCondNode(node);
 }
 
-#ifdef TEST_CONDITION_PACKAGE
+#ifdef TESTING_CONDITION_PACKAGE
 int main() {
-	testNodes();
+	testNode();
 	testMakr();
 	testGetCondList();
 	testGetParseString();

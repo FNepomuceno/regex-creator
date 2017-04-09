@@ -37,8 +37,6 @@ static GraphList *addInfiniteRepetitionNode(GraphList *list,
 #include "../testing.h"
 #include "../utils/test.h"
 static TEST_CASE(GetGraphRegex);
-static TEST_RES(char *, CopyStr, char *str);
-
 static TEST_CASE(GetGraphRegexNull);
 static TEST_CASE(GetGraphRegexLoneChar);
 static TEST_CASE(GetGraphRegexLoneCharCategory);

@@ -1,5 +1,21 @@
 #ifndef CONDITION_NODE_H
 #define CONDITION_NODE_H
+
+#ifdef MODULE_TESTING_H
+#ifdef TESTING_PROGRAM
+#define TESTING_CONDITION_PACKAGE
+#endif
+#ifdef TESTING_CONDITION_PACKAGE
+#define TESTING_CONDITION_NODE
+#else
+#define TEST_THIS
+#endif
+#ifdef TESTING_CONDITION_NODE
+#include "../utils/test.h"
+#endif
+#endif
+
+
 #ifdef  CONDITION_PACKAGE
 
 typedef struct CondNode CondNode;
@@ -14,12 +30,16 @@ CondNode *newCondNode(CondFunc func, char arg1, char arg2,
 CondNode *mergeNodes(CondNode *node1, CondNode *node2,
 	const OperationTag *op_tag);
 void cleanCondNode(CondNode *node);
-
 int isEquivalent(CondNode *node1, CondNode *node2);
-void testNodes();
+int evaluateFunc(CondNode *node, char input);
 
+#ifdef TESTING_CONDITION_NODE
+TEST_CASE(Node);
 #endif
-#ifdef CONDITION_NODE_MODULE
+#endif
+
+
+#ifdef CONDITION_NODE_MOD
 
 typedef struct CondNode CondNode;
 typedef int CondFunc(char, char, char);
@@ -27,7 +47,6 @@ typedef int CondFunc(char, char, char);
 int evaluateCond(CondNode *node, char input);
 static int combineEvals(int bool1, int bool2,
 		const OperationTag *op_tag);
-static int evaluateFunc(CondNode *node, char input);
 
 static int isNegated(CondNode *node);
 static int isLeafCond(CondNode *node);
@@ -39,82 +58,34 @@ static int isValidCond(CondNode *node);
 static int dataEquivalent(CondNode *node1, CondNode *node2);
 static int haveFuncsEquivalent(CondNode *node1, CondNode *node2);
 
-static void testPropertyFuncs();
-static void testIsNullCond();
-static void testIsNegatedCond();
-static void testIsLeafCond();
-static void testIsLinkCond();
-static void testIsBranchCond();
-static void testIsValidCond();
-static CondNode *getTestLeafCond();
-static CondNode *getTestLinkCond();
-static CondNode *getTestBranchCond();
-static CondNode *getTestMalformedCond();
+#ifdef TESTING_CONDITION_NODE
+static TEST_CASE(NullEquivalence);
+static TEST_RES(CondNode *, EqvLeafCondNode, void);
+static TEST_CASE(NilNodeEquivalence);
+static TEST_CASE(SameNodeEquivalence);
+static TEST_CASE(DiffArgsEquivalence);
+static TEST_RES(CondNode *, EqvDiffArgsLeafNode, void);
+static TEST_CASE(DiffFuncEquivalence);
+static TEST_RES(CondNode *, EqvLinkCondNode, void);
+static TEST_RES(CondNode *, EqvDiffFuncLinkNode, void);
+static TEST_CASE(DiffOperationTagEquivalence);
+static TEST_RES(CondNode *, EqvDiffOpTagLinkNode, void);
+static TEST_CASE(DiffNegationTagEquivalence);
+static TEST_RES(CondNode *, EqvDiffNegTagLeafNode, void);
+static TEST_CASE(LinkWithLeafEquivalence);
+static TEST_CASE(LeafWithLinkEquivalence);
+static TEST_CASE(LinkWithBranchEquivalence);
+static TEST_RES(CondNode *, EqvBranchCondNode, void);
+static TEST_CASE(BranchWithLinkEquivalence);
 
-static void testMergingFuncs();
-static void testLinkNodes();
-static void testBranchNodes();
-
-static void testMergeNodes();
-static void testMergeNode1Null();
-static void testMergeNode2Null();
-static void testMergeNode1Nil();
-static void testMergeNode2Nil();
-static void testMergeNode1Invalid();
-static void testMergeNode2Invalid();
-static void testMergeNode1Leaf();
-static void testMergeNode1NotLeaf();
-static CondNode *getTestMergeInvalidNode();
-static CondNode *getTestMergeLeafNode();
-static CondNode *getTestMergeLinkNode();
-
-static void testFuncEquivalence();
-static void testFuncEqvBothBranchNodes();
-static void testFuncEqvNode1NotBranch();
-static void testFuncEqvNode2NotBranch();
-static void testFuncEqvNeitherBranchNodes();
-
-static void testDataEquivalence();
-static void testDataEqvUnequalOpTags();
-static void testDataEqvUnequalNegTags();
-static void testDataEqvFuncsNotEquivalent();
-static void testDataEqvNominalCase();
-static CondNode *getDataEqvTargetLink();
-static CondNode *getDataEqvDiffOpLink();
-static CondNode *getDataEqvDiffNegLink();
-static CondNode *getDataEqvDiffFuncLink();
-
-static void testCondEquivalence();
-static void testCondEqvNode1IsNull();
-static void testCondEqvNode2IsNull();
-static void testCondEqvNode1SameAsNode2();
-static void testCondEqvNode1IsNil();
-static void testCondEqvNode2IsNil();
-static void testCondEqvDataEqvFalse();
-static void testCondEqvChild1NotEqv();
-static void testCondEqvChild2NotEqv();
-static void testCondEqvNodesEqv();
-static CondNode *getCondEqvTargetBranch();
-static CondNode *getCondEqvDiffData();
-static CondNode *getCondEqvDiffChild1();
-static CondNode *getCondEqvDiffChild2();
-
-static void testEvalSubFuncs();
-static void testCombineEvalsBool1Invalid();
-static void testCombineEvalsBool2Invalid();
-static void testCombineEvalsOpTagInvalid();
-static void testEvaluateFuncNodeIsNull();
-static void testEvaluateFuncNodeIsNil();
-
-static void testEvaluateCond();
-static void testEvaluateCondLeaf();
-static void testEvaluateCondLink();
-static void testEvaluateCondBranch();
-static void testEvaluateCondInvalid();
-static CondNode *getTestEvalLeafCond();
-static CondNode *getTestEvalLinkCond();
-static CondNode *getTestEvalBranchCond();
-static CondNode *getTestEvalInvalidCond();
+static TEST_CASE(LeafEvaluation);
+static TEST_RES(CondNode *, EvlLeafCondNode, void);
+static TEST_CASE(LinkEvaluation);
+static TEST_RES(CondNode *, EvlLinkCondNode, void);
+static TEST_CASE(BranchEvaluation);
+static TEST_RES(CondNode *, EvlBranchCondNode, void);
 
 #endif
+#endif
+
 #endif

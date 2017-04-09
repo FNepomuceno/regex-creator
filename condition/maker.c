@@ -1,16 +1,14 @@
 #define CONDITION_PACKAGE
+#define CONDITION_MAKER_MOD
 
 #include <stdlib.h>
+#include "../testing.h"
+#include "maker.h"
 #include "node.h"
 #include "tags.h"
 #include "function/info.h"
-#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
-
-typedef struct CondNode CondNode;
-typedef struct CondMakr CondMakr;
-typedef int CondFunc(char, char, char);
 
 struct CondMakr {
 	CondMakr *parent;
@@ -18,15 +16,12 @@ struct CondMakr {
 	CondNode *arg1, *arg2;
 	const OperationTag *_op_tag;
 };
-
 static CondMakr nil_condmakr_obj;
 CondMakr *nil_makr = &nil_condmakr_obj;
 
-static CondMakr *newCondMakr(CondMakr *parent,
-		const OperationTag *op_tag);
-static CondMakr *simplifyMakr(CondMakr *makr);
-static CondMakr *addNodeSimple(CondNode *node, CondMakr *makr);
-static CondMakr *addNodeToMakr(CondNode *node, CondMakr *makr);
+CondMakr *initializeMakr() {
+	return newCondMakr(nil_makr, IGNORE_OPERATION);
+}
 
 static CondMakr *newCondMakr(CondMakr *parent,
 		const OperationTag *op_tag) {
@@ -39,54 +34,59 @@ static CondMakr *newCondMakr(CondMakr *parent,
 	return newMakr;
 }
 
-CondMakr *initializeMakr() {
-	return newCondMakr(nil_makr, IGNORE_OPERATION);
-}
-
-static int isRootMakr(CondMakr *makr) {
-	return makr->_op_tag == IGNORE_OPERATION;
+CondNode *finalizeMakr(CondMakr *makr) {
+	ASSURE(makr != NULL &&
+			makr != nil_makr &&
+			makrHasResult(makr),
+		LOG_ERROR("INVALID INPUT")
+		return nil_node;
+	);
+	CondNode *result = makr->result;
+	makr->result = nil_node;
+	cleanCondMakr(makr);
+	return result;
 }
 
 static int makrHasResult(CondMakr *makr) {
 	return makr->result != nil_node;
 }
 
-static CondNode *makeMergedNode(CondMakr *makr) {
-	return mergeNodes(makr->arg1, makr->arg2, makr->_op_tag);
+static void cleanCondMakr(CondMakr *makr) {
+	if(makr == NULL) return;
+	CondMakr *cur_makr = makr;
+	while(cur_makr != nil_makr) {
+		cleanCondNode(cur_makr->result);
+		cleanCondNode(cur_makr->arg1);
+		cleanCondNode(cur_makr->arg2);
+		CondMakr *parent = cur_makr->parent;
+		free(cur_makr);
+		cur_makr = parent;
+	}
 }
 
-static CondMakr *passNodeToParent(CondMakr *makr) {
-	CondMakr *parent = makr->parent;
-	CondMakr *child = makr;
-	parent = addNodeSimple(makeMergedNode(child), parent);
-	free(child);
-	return parent;
+CondMakr *addOr(CondMakr *makr, CondNode *node) {
+	ASSURE(node == nil_node,
+		LOG_ERROR("INPUTTED NODE IS INVALID, DISCARDING INPUT");
+		cleanCondNode(node);
+	);
+	return newCondMakr(makr, OR_OPERATION);
 }
 
-static CondMakr *simplifyMakr(CondMakr *makr) {
+CondMakr *addAnd(CondMakr *makr, CondNode *node) {
+	ASSURE(node == nil_node,
+		LOG_ERROR("INPUTTED NODE IS INVALID, DISCARDING INPUT");
+		cleanCondNode(node);
+	);
+	return newCondMakr(makr, AND_OPERATION);
+}
+
+CondMakr *addCond(CondMakr *makr, CondNode *node) {
 	ASSURE(makr != NULL && makr != nil_makr,
-		LOG_ERROR("INTERNAL ERROR");
+		LOG_ERROR("MAKER IS INVALID, DISCARDING INPUT");
+		cleanCondNode(node);
 		return nil_makr;
 	);
-	if(makrHasResult(makr)) return makr;
-
-	CondMakr *result = makr;
-	while(!isRootMakr(result) && result->arg2 != nil_node) {
-		result = passNodeToParent(result);
-	}
-	return result;
-}
-
-static CondMakr *addNodeSimple(CondNode *node, CondMakr *makr) {
-	if(isRootMakr(makr)) {
-		makr->result = node;
-		return makr;
-	}
-
-	if(makr->arg1 == nil_node) makr->arg1 = node;
-	else makr->arg2 = node;
-
-	return makr;
+	return addNodeToMakr(node, makr);
 }
 
 static CondMakr *addNodeToMakr(CondNode *node, CondMakr *makr) {
@@ -107,289 +107,236 @@ static CondMakr *addNodeToMakr(CondNode *node, CondMakr *makr) {
 	return result;
 }
 
-CondMakr *addOr(CondMakr *makr, CondNode *node) {
-	return newCondMakr(makr, OR_OPERATION);
+static CondMakr *addNodeSimple(CondNode *node, CondMakr *makr) {
+	if(isRootMakr(makr)) {
+		makr->result = node;
+		return makr;
+	}
+
+	if(makr->arg1 == nil_node) makr->arg1 = node;
+	else makr->arg2 = node;
+
+	return makr;
 }
 
-CondMakr *addAnd(CondMakr *makr, CondNode *node) {
-	return newCondMakr(makr, AND_OPERATION);
-}
-
-CondMakr *addCond(CondMakr *makr, CondNode *node) {
+static CondMakr *simplifyMakr(CondMakr *makr) {
 	ASSURE(makr != NULL && makr != nil_makr,
-		LOG_ERROR("MAKER IS INVALID, DISCARDING INPUT");
-		cleanCondNode(node);
+		LOG_ERROR("INTERNAL ERROR");
 		return nil_makr;
 	);
-	return addNodeToMakr(node, makr);
-}
+	if(makrHasResult(makr)) return makr;
 
-static void cleanCondMakr(CondMakr *makr) {
-	CondMakr *cur_makr = makr;
-	while(cur_makr != nil_makr) {
-		cleanCondNode(cur_makr->result);
-		cleanCondNode(cur_makr->arg1);
-		cleanCondNode(cur_makr->arg2);
-		CondMakr *parent = cur_makr->parent;
-		free(cur_makr);
-		cur_makr = parent;
+	CondMakr *result = makr;
+	while(!isRootMakr(result) && result->arg2 != nil_node) {
+		result = passNodeToParent(result);
 	}
-}
-
-CondNode *finalizeMakr(CondMakr *makr) {
-	ASSURE(makrHasResult(makr),
-		LOG_ERROR("INVALID INPUT")
-		return nil_node;
-	);
-	CondNode *result = makr->result;
-	makr->result = nil_node;
-	cleanCondMakr(makr);
 	return result;
 }
 
-void testMakr();
-#ifdef TEST_CONDITION_MAKER
+static int isRootMakr(CondMakr *makr) {
+	return makr->_op_tag == IGNORE_OPERATION;
+}
+
+static CondMakr *passNodeToParent(CondMakr *makr) {
+	CondMakr *parent = makr->parent;
+	CondMakr *child = makr;
+	parent = addNodeSimple(makeMergedNode(child), parent);
+	free(child);
+	return parent;
+}
+
+static CondNode *makeMergedNode(CondMakr *makr) {
+	return mergeNodes(makr->arg1, makr->arg2, makr->_op_tag);
+}
+
+#ifdef TESTING_CONDITION_MAKER
+#ifdef TEST_THIS
 int main() {
-	testNodes();
 	testMakr();
 	return 0;
 }
 #endif
 
-static void testInitializeMakr();
-static void testAddOr();
-static void testAddAnd();
-static void testFinalizeMakr();
-static void testAddNodeSimple();
-static void testPassNodeToParent();
-static void testSimplifyMakr();
-static void testAddNodeToMakr();
-static void testAddCond();
-
 void testMakr() {
-	testInitializeMakr();
-	testAddOr();
-	testAddAnd();
-	testFinalizeMakr();
-	testAddNodeSimple();
-	testPassNodeToParent();
-	testSimplifyMakr();
-	testAddNodeToMakr();
-	testAddCond();
+	USE_CASE(FinalizeNullMakr);
+	USE_CASE(FinalizeNilMakr);
+	USE_CASE(FinalizeEmptyMakr);
+	USE_CASE(FinalizeMakrWithResult);
+	USE_CASE(FinalizeIncompleteMakr);
+
+	USE_CASE(AddOrWithNonNilNode);
+	USE_CASE(AddAndWithNonNilNode);
+
+	USE_CASE(MakrMergeOr);
+	USE_CASE(MakrMergeAnd);
 }
 
-static void testInitializeMakr() {
-	CondMakr *test = initializeMakr();
-	TEST(test->result == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->_op_tag == IGNORE_OPERATION);
-	cleanCondMakr(test);
+static TEST_CASE(FinalizeNullMakr) {
+	COMPARE_TEST(CondNode *, Null,
+		USE_RES(FinalizedNullMakrResult,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testAddOr() {
-	CondMakr *test = addOr(nil_makr, nil_node);
-	TEST(test->result == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->_op_tag == OR_OPERATION);
-	cleanCondMakr(test);
+static TEST_RES(CondNode *, FinalizedNullMakrResult, void) {
+	CondMakr *makr = NULL;
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
 }
 
-static void testAddAnd() {
-	CondMakr *test = addAnd(nil_makr, nil_node);
-	TEST(test->result == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->arg1 == nil_node);
-	TEST(test->_op_tag == AND_OPERATION);
-	cleanCondMakr(test);
+static TEST_CASE(FinalizeNilMakr) {
+	COMPARE_TEST(CondNode *, Nil,
+		USE_RES(FinalizedNilMakrResult,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestMakrCond() {
+static TEST_RES(CondNode *, FinalizedNilMakrResult, void) {
+	CondMakr *makr = nil_makr;
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
+}
+
+static TEST_CASE(FinalizeEmptyMakr) {
+	COMPARE_TEST(CondNode *, Empty,
+		USE_RES(FinalizedEmptyMakrResult,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, FinalizedEmptyMakrResult, void) {
+	CondMakr *makr = initializeMakr();
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
+}
+
+static TEST_CASE(FinalizeMakrWithResult) {
+	COMPARE_TEST(CondNode *, Complete,
+		USE_RES(FinalizedFinMakrResult,),
+		USE_RES(TestLeafCondNode,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, FinalizedFinMakrResult, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addCond(makr, newCondNode(equalsChar, '0', '\0',
+		NO_NEGATION));
+	CondNode *result = finalizeMakr(makr);
+	return result;
+}
+
+static TEST_RES(CondNode *, TestLeafCondNode, void) {
 	return newCondNode(equalsChar, '0', '\0', NO_NEGATION);
 }
 
-static void testFinalizeMakr() {
-	CondMakr *test = initializeMakr();
-	TEST(finalizeMakr(test) == nil_node);
-	//not using another makr because test should still be usable
-	CondNode *input = getTestMakrCond();
-	test->result = input;	
-	CondNode *expected = getTestMakrCond();
-	TEST(isEquivalent(finalizeMakr(test), expected));
-	cleanCondNode(expected);
-	cleanCondNode(input);
+static TEST_CASE(FinalizeIncompleteMakr) {
+	COMPARE_TEST(CondNode *, Incomplete,
+		USE_RES(FinalizedUnfMakrResult,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testAddNodeSimple() {
-	CondMakr *test1 = addNodeSimple(getTestMakrCond(),
-		initializeMakr());
-	TEST(makrHasResult(test1));
-	CondNode *expected1 = getTestMakrCond();
-	TEST(isEquivalent(test1->result, expected1));
-	cleanCondNode(expected1);
-	cleanCondMakr(test1);
-
-	CondMakr *test2 = addOr(initializeMakr(), nil_node);
-	test2 = addNodeSimple(getTestMakrCond(), test2);
-	CondNode *expected2 = getTestMakrCond();
-	TEST(isEquivalent(test2->arg1, expected2));
-	test2 = addNodeSimple(getTestMakrCond(), test2);
-	TEST(isEquivalent(test2->arg2, expected2));
-	cleanCondNode(expected2);
-	cleanCondMakr(test2);
+static TEST_RES(CondNode *, FinalizedUnfMakrResult, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addOr(makr, newCondNode(equalsChar, '0', '\0',
+		NO_NEGATION));
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
 }
 
-static void testPassNodeToParent() {
-	CondMakr *test1 = addAnd(initializeMakr(), nil_node);
-	test1 = addNodeSimple(getTestMakrCond(), test1);
-	test1 = addNodeSimple(getTestMakrCond(), test1);
-	test1 = passNodeToParent(test1);
-	TEST(makrHasResult(test1));
-	CondNode *expected1 = mergeNodes(getTestMakrCond(),
-		getTestMakrCond(), AND_OPERATION);
-	TEST(isEquivalent(test1->result, expected1));
-	cleanCondNode(expected1);
-	cleanCondMakr(test1);
-
-	CondMakr *test2 = addAnd(initializeMakr(), nil_node);
-	test2 = addAnd(test2, nil_node);
-	test2 = addNodeSimple(getTestMakrCond(), test2);
-	test2 = addNodeSimple(getTestMakrCond(), test2);
-	test2 = passNodeToParent(test2);
-	CondNode *expected2 = mergeNodes(getTestMakrCond(),
-		getTestMakrCond(), AND_OPERATION);
-	TEST(isEquivalent(test2->arg1, expected2));
-	cleanCondNode(expected2);
-	cleanCondMakr(test2);
+static TEST_CASE(AddOrWithNonNilNode) {
+	COMPARE_TEST(CondNode *, OrNonNil,
+		USE_RES(AddOrWithNonNilNode,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testSimpMakrIsNull();
-static void testSimpMakrIsNil();
-static void testSimpMakrHasResult();
-static void testSimpMakrStopsOnRoot();
-static void testSimpMakrStopsOnNonNil();
-static void testSimpMakrRecurses();
-static void testSimplifyMakr() {
-	testSimpMakrIsNull();
-	testSimpMakrIsNil();
-	testSimpMakrHasResult();
-	testSimpMakrStopsOnRoot();
-	testSimpMakrStopsOnNonNil();
-	testSimpMakrRecurses();
+static TEST_RES(CondNode *, AddOrWithNonNilNode, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addOr(makr, newCondNode(equalsChar, '0', '\0',
+		NO_NEGATION));
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
 }
 
-static void testSimpMakrIsNull() {
-	CondMakr *test = NULL;
-	TEST(simplifyMakr(test) == nil_makr);
+static TEST_CASE(AddAndWithNonNilNode) {
+	COMPARE_TEST(CondNode *, AndNonNil,
+		USE_RES(AddAndWithNonNilNode,),
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testSimpMakrIsNil() {
-	CondMakr *test = nil_makr;
-	TEST(simplifyMakr(test) == nil_makr);
+static TEST_RES(CondNode *, AddAndWithNonNilNode, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addAnd(makr, nil_node);
+	CondNode *result = finalizeMakr(makr);
+	cleanCondMakr(makr);
+	return result;
 }
 
-static void testSimpMakrHasResult() {
-	CondMakr *test = addNodeSimple(getTestMakrCond(),
-		initializeMakr());
-	CondMakr *expected = test;
-	TEST(expected == simplifyMakr(test));
-	cleanCondMakr(test);
+static TEST_CASE(MakrMergeOr) {
+	COMPARE_TEST(CondNode *, OrMerge,
+		USE_RES(FinalizedOrMakrResult,),
+		USE_RES(TestOrCondNode,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testSimpMakrStopsOnRoot() {
-	CondMakr *test = initializeMakr();
-	CondMakr *expected = test;
-	TEST(!makrHasResult(test));
-	TEST(expected == simplifyMakr(test));
-	cleanCondMakr(test);
+static TEST_RES(CondNode *, FinalizedOrMakrResult, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addOr(makr, nil_node);
+	makr = addCond(makr, newCondNode(equalsChar, '1', '\0',
+		NO_NEGATION));
+	makr = addCond(makr, newCondNode(equalsChar, '2', '\0',
+		NO_NEGATION));
+	CondNode *result = finalizeMakr(makr);
+	return result;
 }
 
-static void testSimpMakrStopsOnNonNil() {
-	CondMakr *test = addAnd(initializeMakr(), nil_node);
-	test = addNodeSimple(getTestMakrCond(), test);
-	CondMakr *expected = test;
-	TEST(expected == simplifyMakr(test));
-	cleanCondMakr(test);
+static TEST_RES(CondNode *, TestOrCondNode, void) {
+	CondNode *setup1 =  newCondNode(equalsChar, '1', '\0',
+		NO_NEGATION);
+	CondNode *setup2 =  newCondNode(equalsChar, '2', '\0',
+		NO_NEGATION);
+	return mergeNodes(setup1, setup2, OR_OPERATION);
 }
 
-static void testSimpMakrRecurses() {
-	CondMakr *root = addAnd(initializeMakr(), nil_node);
-	CondMakr *test = addAnd(root, nil_node);
-	test = addNodeSimple(getTestMakrCond(), test);
-	test = addNodeSimple(getTestMakrCond(), test);
-	CondMakr *expected = root;
-	TEST(expected = simplifyMakr(test));
-	cleanCondMakr(root);
+static TEST_CASE(MakrMergeAnd) {
+	COMPARE_TEST(CondNode *, AndMerge,
+		USE_RES(FinalizedAndMakrResult,),
+		USE_RES(TestAndCondNode,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static void testAddNodeNodeNil();
-static void testAddNodeMakrNil();
-static void testAddNodeMakrHasResult();
-static void testAddNodeNominal();
-static void testAddNodeToMakr() {
-	testAddNodeNodeNil();
-	testAddNodeMakrNil();
-	testAddNodeMakrHasResult();
-	testAddNodeNominal();
+static TEST_RES(CondNode *, FinalizedAndMakrResult, void) {
+	CondMakr *makr = initializeMakr();
+	makr = addAnd(makr, nil_node);
+	makr = addCond(makr, newCondNode(equalsChar, '1', '\0',
+		NO_NEGATION));
+	makr = addCond(makr, newCondNode(equalsChar, '2', '\0',
+		NO_NEGATION));
+	CondNode *result = finalizeMakr(makr);
+	return result;
 }
 
-static void testAddNodeNodeNil() {
-	CondMakr *test_makr = initializeMakr();
-	CondNode *test_node1 = NULL;
-	TEST(addNodeToMakr(test_node1, test_makr) == test_makr);
-	CondNode *test_node2 = nil_node;
-	TEST(addNodeToMakr(test_node2, test_makr) == test_makr);
-	cleanCondMakr(test_makr);
+static TEST_RES(CondNode *, TestAndCondNode, void) {
+	CondNode *setup1 =  newCondNode(equalsChar, '1', '\0',
+		NO_NEGATION);
+	CondNode *setup2 =  newCondNode(equalsChar, '2', '\0',
+		NO_NEGATION);
+	return mergeNodes(setup1, setup2, AND_OPERATION);
 }
-
-static void testAddNodeMakrNil() {
-	CondMakr *test_makr1 = NULL;
-	CondNode *test_node1 = getTestMakrCond();
-	TEST(addNodeToMakr(test_node1, test_makr1) == nil_makr);
-
-	//Need another CondNode because the first gets discarded
-	CondMakr *test_makr2 = nil_makr;
-	CondNode *test_node2 = getTestMakrCond();
-	TEST(addNodeToMakr(test_node2, test_makr2) == nil_makr);
-}
-
-static void testAddNodeMakrHasResult() {
-	CondMakr *test = initializeMakr();
-	test = addNodeToMakr(getTestMakrCond(), test);
-	CondMakr *expected = test;
-	TEST(expected == addNodeToMakr(getTestMakrCond(), test));
-	cleanCondMakr(test);
-}
-
-static void testAddNodeNominal() {
-	CondMakr *test = initializeMakr();
-	CondMakr *expected = test;
-	test = addNodeToMakr(getTestMakrCond(), test);
-	TEST(expected == test);
-	TEST(makrHasResult(test));
-	cleanCondMakr(test);
-}
-
-static void testAddCondMakrNil();
-static void testAddCondMakrNotNil();
-static void testAddCond() {
-	testAddCondMakrNil();
-	testAddCondMakrNotNil();
-}
-
-static void testAddCondMakrNil() {
-	CondMakr *test_makr1 = NULL;
-	CondMakr *test_makr2 = nil_makr;
-	CondNode *test_node1 = getTestMakrCond();
-	CondNode *test_node2 = getTestMakrCond();
-	TEST(addCond(test_makr1, test_node1) == nil_makr);
-	TEST(addCond(test_makr2, test_node2) == nil_makr);
-}
-
-static void testAddCondMakrNotNil() {
-	CondMakr *test = initializeMakr();
-	CondMakr *expected = test;
-	TEST(expected == addCond(test, getTestMakrCond()));
-	cleanCondMakr(test);
-}
+#endif

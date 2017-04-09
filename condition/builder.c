@@ -1,19 +1,18 @@
 #define CONDITION_PACKAGE
+#define CONDITION_BUILDER_MOD
 
 #include <string.h>
+#include "../testing.h"
+#include "builder.h"
 #include "list.h"
 #include "maker.h"
 #include "node.h"
 #include "parsestring.h"
 #include "tags.h"
 #include "function/info.h"
-#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 
-typedef struct CondMakr *MakrAction(CondMakr *, CondNode *);
-
-static MakrAction *getAction(char ch);
 CondNode *buildCond(char *str) {
 	char *parse_string = getParseString(str);
 	CondList *cond_list = getCondList(str);
@@ -53,20 +52,15 @@ static MakrAction *getAction(char ch) {
 	}
 }
 
-void testBuildCond();
-#ifdef TEST_CONDITION_BUILDER
+#ifdef TESTING_CONDITION_BUILDER
+#ifdef TEST_THIS
 int main() {
-	testBuildCond();
+	USE_CASE(BuildCond);
 	return 0;
 }
 #endif
 
-static void testBuildCondNull();
-static void testBuildCondSingleChar();
-static void testBuildCondCharCategory();
-static void testBuildCondSimpleCharClass();
-static void testBuildCondComplexCharClass();
-void testBuildCond() {
+TEST_CASE(BuildCond) {
 	testBuildCondNull();
 	testBuildCondSingleChar();
 	testBuildCondCharCategory();
@@ -74,159 +68,136 @@ void testBuildCond() {
 	testBuildCondComplexCharClass();
 }
 
-static CondNode *getTestBuildCondNullNode1();
-static CondNode *getTestBuildCondNullNode2();
-static void testBuildCondNull() {
-	CondNode *test1 = buildCond(NULL);
-	CondNode *expected1 = getTestBuildCondNullNode1();
-	TEST(isEquivalent(test1, expected1) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(expected1);
-
-	CondNode *test2 = buildCond("");
-	CondNode *expected2 = getTestBuildCondNullNode2();
-	TEST(isEquivalent(test2, expected2) == TRUE_BOOL);
-	cleanCondNode(test2);
-	cleanCondNode(expected2);
+static TEST_CASE(BuildCondNull) {
+	COMPARE_TEST(CondNode *, Null,
+		buildCond(NULL),
+		USE_RES(Null,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, Nil,
+		buildCond(""),
+		USE_RES(Nil,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestBuildCondNullNode1() {
+static TEST_RES(CondNode *, Null, void) {
 	return nil_node;
 }
 
-static CondNode *getTestBuildCondNullNode2() {
+static TEST_RES(CondNode *, Nil, void) {
 	return nil_node;
 }
 
-static CondNode *getTestBuildCondSingleCharNode1();
-static CondNode *getTestBuildCondSingleCharNode2();
-static CondNode *getTestBuildCondSingleCharNode3();
-static void testBuildCondSingleChar() {
-	CondNode *test1 = buildCond("a");
-	CondNode *expected1 = getTestBuildCondSingleCharNode1();
-	TEST(isEquivalent(test1, expected1) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(expected1);
-
-	CondNode *test2 = buildCond("\\\\");
-	CondNode *expected2 = getTestBuildCondSingleCharNode2();
-	TEST(isEquivalent(test2, expected2) == TRUE_BOOL);
-	cleanCondNode(test2);
-	cleanCondNode(expected2);
-	
-	CondNode *test3 = buildCond("\\.");
-	CondNode *expected3 = getTestBuildCondSingleCharNode3();
-	TEST(isEquivalent(test3, expected3) == TRUE_BOOL);
-	cleanCondNode(test3);
-	cleanCondNode(expected3);
+static TEST_CASE(BuildCondSingleChar) {
+	COMPARE_TEST(CondNode *, LoneChar,
+		buildCond("a"),
+		USE_RES(LoneChar,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, EscapedLiteral,
+		buildCond("\\g"),
+		USE_RES(EscapedLiteral,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, EscapedMeta,
+		buildCond("\\."),
+		USE_RES(EscapedMeta,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestBuildCondSingleCharNode1() {
+static TEST_RES(CondNode *, LoneChar, void) {
 	return newCondNode(equalsChar, 'a', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondSingleCharNode2() {
-	return newCondNode(equalsChar, '\\', '\0', NO_NEGATION);
+static TEST_RES(CondNode *, EscapedLiteral, void) {
+	return newCondNode(equalsChar, 'g', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondSingleCharNode3() {
+static TEST_RES(CondNode *, EscapedMeta, void) {
 	return newCondNode(equalsChar, '.', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondCharCategoryNode1();
-static CondNode *getTestBuildCondCharCategoryNode2();
-static CondNode *getTestBuildCondCharCategoryNode3();
-static void testBuildCondCharCategory() {
-	CondNode *test1 = buildCond("\\d");
-	CondNode *expected1 = getTestBuildCondCharCategoryNode1();
-	TEST(isEquivalent(test1, expected1) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(expected1);
-
-	CondNode *test2 = buildCond("\\D");
-	CondNode *expected2 = getTestBuildCondCharCategoryNode2();
-	TEST(isEquivalent(test2, expected2) == TRUE_BOOL);
-	cleanCondNode(test2);
-	cleanCondNode(expected2);
-	
-	CondNode *test3 = buildCond("\\w");
-	CondNode *expected3 = getTestBuildCondCharCategoryNode3();
-	TEST(isEquivalent(test3, expected3) == TRUE_BOOL);
-	cleanCondNode(test3);
-	cleanCondNode(expected3);
+static TEST_CASE(BuildCondCharCategory) {
+	COMPARE_TEST(CondNode *, DigitCategory,
+		buildCond("\\d"),
+		USE_RES(DigitCategory,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, NegatedDigitCategory,
+		buildCond("\\D"),
+		USE_RES(NegatedDigitCategory,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, WordCategory,
+		buildCond("\\w"),
+		USE_RES(WordCategory,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestBuildCondCharCategoryNode1() {
+static TEST_RES(CondNode *, DigitCategory, void) {
 	return newCondNode(isDigitChar, '\0', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondCharCategoryNode2() {
+static TEST_RES(CondNode *, NegatedDigitCategory, void) {
 	return newCondNode(isDigitChar, '\0', '\0', YES_NEGATION);
 }
 
-static CondNode *getTestBuildCondCharCategoryNode3() {
+static TEST_RES(CondNode *, WordCategory, void) {
 	return newCondNode(isWordChar, '\0', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondSimpleCharClassNode1();
-static CondNode *getTestBuildCondSimpleCharClassNode2();
-static CondNode *getTestBuildCondSimpleCharClassNode3();
-static void testBuildCondSimpleCharClass() {
-	CondNode *test1 = buildCond("[C]");
-	CondNode *expected1 = getTestBuildCondSimpleCharClassNode1();
-	TEST(isEquivalent(test1, expected1) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(expected1);
-
-	CondNode *test2 = buildCond("[^q]");
-	CondNode *expected2 = getTestBuildCondSimpleCharClassNode2();
-	TEST(isEquivalent(test2, expected2) == TRUE_BOOL);
-	cleanCondNode(test2);
-	cleanCondNode(expected2);
-	
-	CondNode *test3 = buildCond("[R-b]");
-	CondNode *expected3 = getTestBuildCondSimpleCharClassNode3();
-	TEST(isEquivalent(test3, expected3) == TRUE_BOOL);
-	cleanCondNode(test3);
-	cleanCondNode(expected3);
+static TEST_CASE(BuildCondSimpleCharClass) {
+	COMPARE_TEST(CondNode *, SingleCharClass,
+		buildCond("[C]"),
+		USE_RES(SingleCharClass,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, NegatedSingleCharClass,
+		buildCond("[^q]"),
+		USE_RES(NegatedSingleCharClass,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, SingleRangeClass,
+		buildCond("[R-b]"),
+		USE_RES(SingleRangeClass,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestBuildCondSimpleCharClassNode1() {
+static TEST_RES(CondNode *, SingleCharClass, void) {
 	return newCondNode(equalsChar, 'C', '\0', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondSimpleCharClassNode2() {
+static TEST_RES(CondNode *, NegatedSingleCharClass, void) {
 	return newCondNode(equalsChar, 'q', '\0', YES_NEGATION);
 }
 
-static CondNode *getTestBuildCondSimpleCharClassNode3() {
+static TEST_RES(CondNode *, SingleRangeClass, void) {
 	return newCondNode(inRangeChar, 'R', 'b', NO_NEGATION);
 }
 
-static CondNode *getTestBuildCondComplexCharClassNode1();
-static CondNode *getTestBuildCondComplexCharClassNode2();
-static CondNode *getTestBuildCondComplexCharClassNode3();
-static void testBuildCondComplexCharClass() {
-	CondNode *test1 = buildCond("[eZ]");
-	CondNode *expected1 = getTestBuildCondComplexCharClassNode1();
-	TEST(isEquivalent(test1, expected1) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(expected1);
-
-	CondNode *test2 = buildCond("[-#-%!]");
-	CondNode *expected2 = getTestBuildCondComplexCharClassNode2();
-	TEST(isEquivalent(test2, expected2) == TRUE_BOOL);
-	cleanCondNode(test2);
-	cleanCondNode(expected2);
-	
-	CondNode *test3 = buildCond("[^Wua-h?]");
-	CondNode *expected3 = getTestBuildCondComplexCharClassNode3();
-	TEST(isEquivalent(test3, expected3) == TRUE_BOOL);
-	cleanCondNode(test3);
-	cleanCondNode(expected3);
+static TEST_CASE(BuildCondComplexCharClass) {
+	COMPARE_TEST(CondNode *, DoubleLetterClass,
+		buildCond("[eZ]"),
+		USE_RES(DoubleLetterClass,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, ClassWithDash,
+		buildCond("[-#-%!]"),
+		USE_RES(ClassWithDash,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, NegatedComplexClass,
+		buildCond("[^Wua-h?]"),
+		USE_RES(NegatedComplexClass,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
 }
 
-static CondNode *getTestBuildCondComplexCharClassNode1() {
+static TEST_RES(CondNode *, DoubleLetterClass, void) {
 	CondNode *setup1 = newCondNode(equalsChar, 'e', '\0',
 		NO_NEGATION);
 	CondNode *setup2 = newCondNode(equalsChar, 'Z', '\0',
@@ -236,7 +207,7 @@ static CondNode *getTestBuildCondComplexCharClassNode1() {
 	return setup3;
 }
 
-static CondNode *getTestBuildCondComplexCharClassNode2() {
+static TEST_RES(CondNode *, ClassWithDash, void) {
 	CondNode *setup1 = newCondNode(equalsChar, '-', '\0',
 		NO_NEGATION);
 	CondNode *setup2 = newCondNode(inRangeChar, '#', '%',
@@ -250,7 +221,7 @@ static CondNode *getTestBuildCondComplexCharClassNode2() {
 	return setup5;
 }
 
-static CondNode *getTestBuildCondComplexCharClassNode3() {
+static TEST_RES(CondNode *, NegatedComplexClass, void) {
 	CondNode *setup1 = newCondNode(equalsChar, 'W', '\0',
 		YES_NEGATION);
 	CondNode *setup2 = newCondNode(equalsChar, 'u', '\0',
@@ -267,3 +238,4 @@ static CondNode *getTestBuildCondComplexCharClassNode3() {
 		AND_OPERATION);
 	return setup7;
 }
+#endif

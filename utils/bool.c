@@ -29,6 +29,10 @@ int boolInvert(int bool_val) {
 	}
 }
 
+int boolEquate(void *thing1, void *thing2) {
+	return toBool(thing1 == thing2);
+}
+
 int boolOr(int bool1, int bool2) {
 	assert(argsValid(bool1, bool2));
 	return toBool((bool1 == TRUE_BOOL) ||

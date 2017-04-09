@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "chartyperegex.h"
+#include "../utils/chartype.h"
 #include "graphregex.h"
 #include "../utils/bool.h"
 
@@ -352,12 +352,6 @@ static TEST_CASE(GetGraphRegexNull) {
 		getGraphRegex("[^]"), INVALID_STRING,
 		strcmp, 0,
 		cleanGraphRegex);
-}
-
-static TEST_RES(char *, CopyStr, char *str) {
-	int size = strlen(str) + 1;
-	char *result = malloc(size * sizeof(char));
-	return memcpy(result, str, size * sizeof(char));
 }
 
 static TEST_CASE(GetGraphRegexLoneChar) {

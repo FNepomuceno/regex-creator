@@ -1,12 +1,12 @@
 #define CONDITION_PACKAGE
-#define CONDITION_NODE_MODULE
+#define CONDITION_NODE_MOD
 
 #include <stdlib.h>
+#include "../testing.h"
 #include "node.h"
 #include "tags.h"
 #include "function/data.h"
 #include "function/info.h"
-#include "../testing.h"
 #include "../utils/bool.h"
 #include "../utils/test.h"
 
@@ -145,7 +145,7 @@ static int combineEvals(int bool1, int bool2,
 	}
 }
 
-static int evaluateFunc(CondNode *node, char input) {
+int evaluateFunc(CondNode *node, char input) {
 	ASSURE(node != NULL && node != nil_node &&
 			node->func_data != nil_data,
 		LOG_ERROR("INVALID INPUT");
@@ -192,7 +192,7 @@ static int isValidCond(CondNode *node) {
 
 int isEquivalent(CondNode *node1, CondNode *node2) {
 	ASSURE(node1 != NULL && node2 != NULL,
-		LOG_ERROR("NULL POINTER FOUND");
+		LOG_ERROR("INVALID INPUT");
 		return FALSE_BOOL;
 	)
 	if(node1 == node2) {
@@ -221,7 +221,7 @@ static int sharesNegTag(CondNode *node1, CondNode *node2) {
 static int dataEquivalent(CondNode *node1, CondNode *node2) {
 	ASSURE((node1 != NULL && node2 != NULL &&
 			node1 != nil_node && node2 != nil_node),
-		LOG_ERROR("SHOULD NOT GET HERE\n");
+		LOG_ERROR("CRITICAL ERROR");
 		abort();
 	);
 	return sharesOpTag(node1, node2) &&
@@ -240,643 +240,236 @@ static int haveFuncsEquivalent(CondNode *node1, CondNode *node2) {
 	return FALSE_BOOL;
 }
 
-#ifdef TEST_CONDITION_NODE
+#ifdef TESTING_CONDITION_NODE
+#ifdef TEST_THIS
 int main() {
-	testNodes();
+	USE_CASE(Node);
 	return 0;
 }
 #endif
 
-void testNodes() {
-	testPropertyFuncs();
-	testMergingFuncs();
-	testMergeNodes();
-	testFuncEquivalence();
-	testDataEquivalence();
-	testCondEquivalence();
-	testEvalSubFuncs();
-	testEvaluateCond();
+TEST_CASE(Node) {
+	USE_CASE(NullEquivalence);
+	USE_CASE(NilNodeEquivalence);
+	USE_CASE(SameNodeEquivalence);
+	USE_CASE(DiffArgsEquivalence);
+	USE_CASE(DiffFuncEquivalence);
+	USE_CASE(DiffOperationTagEquivalence);
+	USE_CASE(DiffNegationTagEquivalence);
+	USE_CASE(LinkWithLeafEquivalence);
+	USE_CASE(LeafWithLinkEquivalence);
+	USE_CASE(LinkWithBranchEquivalence);
+	USE_CASE(BranchWithLinkEquivalence);
+
+	USE_CASE(LeafEvaluation);
+	USE_CASE(LinkEvaluation);
+	USE_CASE(BranchEvaluation);
 }
 
-static void testPropertyFuncs() {
-	testIsNullCond();
-	testIsNegatedCond();
-	testIsLeafCond();
-	testIsLinkCond();
-	testIsBranchCond();
-	testIsValidCond();
+static TEST_CASE(NullEquivalence) {
+	COMPARE_TEST(CondNode *, NullToNullEquivalence,
+		NULL,
+		NULL,
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, NullToValidEquivalence,
+		NULL,
+		USE_RES(EqvLeafCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, ValidToNullEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		NULL,
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
 }
 
-static void testIsNullCond() {
-	TEST(isNullCond(NULL));
-	TEST(isNullCond(nil_node));
-
-	CondNode *test = newCondNode(isWhitespace, '\0', '\0',
-		YES_NEGATION);
-	TEST(!isNullCond(test));
-	cleanCondNode(test);
+static TEST_RES(CondNode *, EqvLeafCondNode, void) {
+	return newCondNode(equalsChar, '%', '\0', NO_NEGATION);
 }
 
-static void testIsNegatedCond() {
-	CondNode *test1 = newCondNode(isWhitespace, '\0', '\0',
-		YES_NEGATION);
-	TEST(isNegated(test1) == TRUE_BOOL);
-	cleanCondNode(test1);
+static TEST_CASE(NilNodeEquivalence) {
+	COMPARE_TEST(CondNode *, NilToNilEquivalence,
+		nil_node,
+		nil_node,
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, NilToValidEquivalence,
+		nil_node,
+		USE_RES(EqvLeafCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+	COMPARE_TEST(CondNode *, ValidToNilEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		nil_node,
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
 
-	CondNode *test2 = newCondNode(isWhitespace, '\0', '\0',
+static TEST_CASE(SameNodeEquivalence) {
+	COMPARE_TEST(CondNode *, SameNodeEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		USE_RES(EqvLeafCondNode,),
+		isEquivalent, TRUE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_CASE(DiffArgsEquivalence) {
+	COMPARE_TEST(CondNode *, DiffArgsEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		USE_RES(EqvDiffArgsLeafNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, EqvDiffArgsLeafNode, void) {
+	return newCondNode(equalsChar, '#', '\0', NO_NEGATION);
+}
+
+static TEST_CASE(DiffFuncEquivalence) {
+	COMPARE_TEST(CondNode *, DiffFuncEquivalence,
+		USE_RES(EqvLinkCondNode,),
+		USE_RES(EqvDiffFuncLinkNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, EqvLinkCondNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, '%', '\0',
 		NO_NEGATION);
-	TEST(isNegated(test2) == FALSE_BOOL);
-	cleanCondNode(test2);
-
-	CondNode *test3 = newCondNode(isWhitespace, '\0', '\0',
-		IGNORE_NEGATION);
-	TEST(isNegated(test3) == FALSE_BOOL);
-	cleanCondNode(test3);
-
-	CondNode *test4 = newCondNode(isWhitespace, '\0', '\0',
-		INVALID_NEGATION);
-	TEST(isNegated(test4) == FALSE_BOOL);
-	cleanCondNode(test4);
+	CondNode *setup2 = newCondNode(isWordChar, '\0', '\0',
+		NO_NEGATION);
+	return mergeNodes(setup1, setup2, OR_OPERATION);
 }
 
-static void testIsLeafCond() {
-	CondNode *test1 = getTestLeafCond();
-	TEST(isLeafCond(test1));
-	cleanCondNode(test1);
-
-	CondNode *test2 = getTestLinkCond();
-	TEST(!isLeafCond(test2));
-	cleanCondNode(test2);
-
-	CondNode *test3 = getTestBranchCond();
-	TEST(!isLeafCond(test3));
-	cleanCondNode(test3);
-
-	CondNode *test4 = getTestMalformedCond();
-	TEST(!isLeafCond(test4));
-	cleanCondNode(test4);
-}
-
-static void testIsLinkCond() {
-	CondNode *test1 = getTestLeafCond();
-	TEST(!isLinkCond(test1));
-	cleanCondNode(test1);
-
-	CondNode *test2 = getTestLinkCond();
-	TEST(isLinkCond(test2));
-	cleanCondNode(test2);
-
-	CondNode *test3 = getTestBranchCond();
-	TEST(!isLinkCond(test3));
-	cleanCondNode(test3);
-
-	CondNode *test4 = getTestMalformedCond();
-	TEST(!isLinkCond(test4));
-	cleanCondNode(test4);
-}
-
-static void testIsBranchCond() {
-	CondNode *test1 = getTestLeafCond();
-	TEST(!isBranchCond(test1));
-	cleanCondNode(test1);
-
-	CondNode *test2 = getTestLinkCond();
-	TEST(!isBranchCond(test2));
-	cleanCondNode(test2);
-
-	CondNode *test3 = getTestBranchCond();
-	TEST(isBranchCond(test3));
-	cleanCondNode(test3);
-
-	CondNode *test4 = getTestMalformedCond();
-	TEST(!isBranchCond(test4));
-	cleanCondNode(test4);
-}
-
-static void testIsValidCond() {
-	CondNode *test1 = getTestLeafCond();
-	TEST(isValidCond(test1));
-	cleanCondNode(test1);
-
-	CondNode *test2 = getTestLinkCond();
-	TEST(isValidCond(test2));
-	cleanCondNode(test2);
-
-	CondNode *test3 = getTestBranchCond();
-	TEST(isValidCond(test3));
-	cleanCondNode(test3);
-
-	CondNode *test4 = getTestMalformedCond();
-	TEST(!isValidCond(test4));
-	cleanCondNode(test4);
-
-	CondNode *test5 = NULL;
-	TEST(!isValidCond(test5));
-
-	CondNode *test6 = nil_node;
-	TEST(!isValidCond(test6));
-}
-
-static CondNode *getTestLeafCond() {
-	return newCondNode(isWordChar, '\0', '\0', NO_NEGATION);
-}
-
-static CondNode *getTestLinkCond() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
+static TEST_RES(CondNode *, EqvDiffFuncLinkNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, '%', '\0',
 		NO_NEGATION);
 	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
 		NO_NEGATION);
-	CondNode *result = setup1;
-	setup1->chld2 = setup2;
-	return result;
+	return mergeNodes(setup1, setup2, OR_OPERATION);
 }
 
-static CondNode *getTestBranchCond() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
+static TEST_CASE(DiffOperationTagEquivalence) {
+	COMPARE_TEST(CondNode *, DiffFuncEquivalence,
+		USE_RES(EqvLinkCondNode,),
+		USE_RES(EqvDiffOpTagLinkNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, EqvDiffOpTagLinkNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, '%', '\0',
 		NO_NEGATION);
 	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
 		NO_NEGATION);
-	CondNode *result = newCondNode(inRangeChar, 'A', 'z',
-		YES_NEGATION);
-	result->chld1 = setup1;
-	result->chld2 = setup2;
-	return result;
-}
-
-static CondNode *getTestMalformedCond() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *result = setup1;
-	result->chld1 = setup2;
-	return result;
-}
-
-static void testMergingFuncs() {
-	testLinkNodes();
-	testBranchNodes();
-}
-
-static void testLinkNodes() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *test = linkNodes(setup1, setup2, OR_OPERATION);
-	TEST(isLinkCond(test));
-	cleanCondNode(test);
-}
-
-static void testBranchNodes() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *test = branchNodes(setup1, setup2,
-		OR_OPERATION);
-	TEST(isBranchCond(test));
-	cleanCondNode(test);
-}
-
-static void testMergeNodes() {
-	testMergeNode1Null();
-	testMergeNode2Null();
-	testMergeNode1Nil();
-	testMergeNode2Nil();
-	testMergeNode1Invalid();
-	testMergeNode2Invalid();
-	testMergeNode1Leaf();
-	testMergeNode1NotLeaf();
-}
-
-static void testMergeNode1Null() {
-	CondNode *test1 = NULL;
-	CondNode *test2 = getTestMergeLeafNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode2Null() {
-	CondNode *test1 = getTestMergeLeafNode();
-	CondNode *test2 = NULL;
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode1Nil() {
-	CondNode *test1 = nil_node;
-	CondNode *test2 = getTestMergeLeafNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode2Nil() {
-	CondNode *test1 = getTestMergeLeafNode();
-	CondNode *test2 = nil_node;
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode1Invalid() {
-	CondNode *test1 = getTestMergeInvalidNode();
-	CondNode *test2 = getTestMergeLeafNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode2Invalid() {
-	CondNode *test1 = getTestMergeLeafNode();
-	CondNode *test2 = getTestMergeInvalidNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(test3 == nil_node);
-	cleanCondNode(test3);
-}
-
-static void testMergeNode1Leaf() {
-	CondNode *test1 = getTestMergeLeafNode();
-	CondNode *test2 = getTestMergeLinkNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(isLinkCond(test3));
-	cleanCondNode(test3);
-}
-
-static void testMergeNode1NotLeaf() {
-	CondNode *test1 = getTestMergeLinkNode();
-	CondNode *test2 = getTestMergeLeafNode();
-	CondNode *test3 = mergeNodes(test1, test2,
-		AND_OPERATION);
-	TEST(isBranchCond(test3));
-	cleanCondNode(test3);
-}
-
-static CondNode *getTestMergeInvalidNode() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *result = setup1;
-	result->chld1 = setup2;
-	return result;
-}
-
-static CondNode *getTestMergeLeafNode() {
-	return newCondNode(inRangeChar, 'A', 'z', NO_NEGATION);
-}
-
-static CondNode *getTestMergeLinkNode() {
-	CondNode *setup1 = newCondNode(isWordChar, '\0', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, OR_OPERATION);
-}
-
-static void testFuncEquivalence() {
-	testFuncEqvBothBranchNodes();
-	testFuncEqvNode1NotBranch();
-	testFuncEqvNode2NotBranch();
-	testFuncEqvNeitherBranchNodes();
-}
-
-static CondNode* getFuncEqvBranch() {
-	CondNode *setup1 = newCondNode(equalsChar, 'a', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, 'b', '\0',
-		NO_NEGATION);
-	return branchNodes(setup1, setup2, OR_OPERATION);
-}
-
-static CondNode* getFuncEqvNonBranch() {
-	CondNode *setup1 = newCondNode(equalsChar, 'a', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, 'b', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, OR_OPERATION);
-}
-
-static void testFuncEqvBothBranchNodes() {
-	CondNode *test1 = getFuncEqvBranch();
-	CondNode *test2 = getFuncEqvBranch();
-	TEST(haveFuncsEquivalent(test1, test2) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testFuncEqvNode1NotBranch() {
-	CondNode *test1 = getFuncEqvNonBranch();
-	CondNode *test2 = getFuncEqvBranch();
-	TEST(haveFuncsEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testFuncEqvNode2NotBranch() {
-	CondNode *test1 = getFuncEqvBranch();
-	CondNode *test2 = getFuncEqvNonBranch();
-	TEST(haveFuncsEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testFuncEqvNeitherBranchNodes() {
-	CondNode *test1 = getFuncEqvNonBranch();
-	CondNode *test2 = getFuncEqvNonBranch();
-	TEST(haveFuncsEquivalent(test1, test2) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testDataEquivalence() {
-	testDataEqvUnequalOpTags();
-	testDataEqvUnequalNegTags();
-	testDataEqvFuncsNotEquivalent();
-	testDataEqvNominalCase();
-}
-
-static void testDataEqvUnequalOpTags() {
-	CondNode *test1 = getDataEqvTargetLink();
-	CondNode *test2 = getDataEqvDiffOpLink();
-	TEST(!dataEquivalent(test1, test2));
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testDataEqvUnequalNegTags() {
-	CondNode *test1 = getDataEqvTargetLink();
-	CondNode *test2 = getDataEqvDiffNegLink();
-	TEST(!dataEquivalent(test1, test2));
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testDataEqvFuncsNotEquivalent() {
-	CondNode *test1 = getDataEqvTargetLink();
-	CondNode *test2 = getDataEqvDiffFuncLink();
-	TEST(!dataEquivalent(test1, test2));
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testDataEqvNominalCase() {
-	CondNode *test1 = getDataEqvTargetLink();
-	CondNode *test2 = getDataEqvTargetLink();
-	TEST(dataEquivalent(test1, test2));
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static CondNode *getDataEqvTargetLink() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, OR_OPERATION);
-}
-
-static CondNode *getDataEqvDiffOpLink() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, AND_OPERATION);
-}
-
-static CondNode *getDataEqvDiffNegLink() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, OR_OPERATION);
-}
-
-static CondNode *getDataEqvDiffFuncLink() {
-	CondNode *setup1 = newCondNode(equalsChar, '!', '\0',
-		NO_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		NO_NEGATION);
-	return linkNodes(setup1, setup2, OR_OPERATION);
-}
-
-static void testCondEquivalence() {
-	testCondEqvNode1IsNull();
-	testCondEqvNode2IsNull();
-	testCondEqvNode1SameAsNode2();
-	testCondEqvNode1IsNil();
-	testCondEqvNode2IsNil();
-	testCondEqvDataEqvFalse();
-	testCondEqvChild1NotEqv();
-	testCondEqvChild2NotEqv();
-	testCondEqvNodesEqv();
-}
-
-static void testCondEqvNode1IsNull() {
-	CondNode *test1 = NULL;
-	CondNode *test2 = getCondEqvTargetBranch();
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvNode2IsNull() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = NULL;
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvNode1SameAsNode2() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = test1;
-	TEST(isEquivalent(test1, test2) == TRUE_BOOL);
-	cleanCondNode(test1);
-}
-
-static void testCondEqvNode1IsNil() {
-	CondNode *test1 = nil_node;
-	CondNode *test2 = getCondEqvTargetBranch();
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvNode2IsNil() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = nil_node;
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvDataEqvFalse() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = getCondEqvDiffData();
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvChild1NotEqv() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = getCondEqvDiffChild1();
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvChild2NotEqv() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = getCondEqvDiffChild2();
-	TEST(isEquivalent(test1, test2) == FALSE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static void testCondEqvNodesEqv() {
-	CondNode *test1 = getCondEqvTargetBranch();
-	CondNode *test2 = getCondEqvTargetBranch();
-	TEST(isEquivalent(test1, test2) == TRUE_BOOL);
-	cleanCondNode(test1);
-	cleanCondNode(test2);
-}
-
-static CondNode *getCondEqvTargetBranch() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	return branchNodes(setup1, setup2, AND_OPERATION);
-}
-
-static CondNode *getCondEqvDiffData() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	return branchNodes(setup1, setup2, OR_OPERATION);
-}
-
-static CondNode *getCondEqvDiffChild1() {
-	CondNode *setup1 = newCondNode(equalsChar, '!', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	return branchNodes(setup1, setup2, AND_OPERATION);
-}
-
-static CondNode *getCondEqvDiffChild2() {
-	CondNode *setup1 = newCondNode(equalsChar, '?', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(equalsChar, '!', '\0',
-		YES_NEGATION);
-	return branchNodes(setup1, setup2, AND_OPERATION);
-}
-
-static void testEvalSubFuncs() {
-	testCombineEvalsBool1Invalid();
-	testCombineEvalsBool2Invalid();
-	testCombineEvalsOpTagInvalid();
-	testEvaluateFuncNodeIsNull();
-	testEvaluateFuncNodeIsNil();
-}
-
-static void testCombineEvalsBool1Invalid() {
-	TEST(combineEvals(-1, TRUE_BOOL, OR_OPERATION) ==
-		FALSE_BOOL);
-}
-
-static void testCombineEvalsBool2Invalid() {
-	TEST(combineEvals(TRUE_BOOL, -1, OR_OPERATION) ==
-		FALSE_BOOL);
-}
-
-static void testCombineEvalsOpTagInvalid() {
-	TEST(combineEvals(TRUE_BOOL, TRUE_BOOL,
-		IGNORE_OPERATION) == FALSE_BOOL);
-	TEST(combineEvals(TRUE_BOOL, TRUE_BOOL,
-		INVALID_OPERATION) == FALSE_BOOL);
-}
-
-static void testEvaluateFuncNodeIsNull() {
-	TEST(evaluateFunc(NULL, '!') == FALSE_BOOL);
-}
-
-static void testEvaluateFuncNodeIsNil() {
-	TEST(evaluateFunc(nil_node, '!') == FALSE_BOOL);
-}
-
-static void testEvaluateCond() {
-	testEvaluateCondBranch();
-	testEvaluateCondLink();
-	testEvaluateCondLeaf();
-	testEvaluateCondInvalid();
-}
-
-static void testEvaluateCondLeaf() {
-	CondNode *test = getTestEvalLeafCond();
-	TEST(evaluateCond(test, ' ') == TRUE_BOOL);
-	TEST(evaluateCond(test, '5') == FALSE_BOOL);
-	cleanCondNode(test);
-}
-
-static void testEvaluateCondLink() {
-	CondNode *test = getTestEvalLinkCond();
-	TEST(evaluateCond(test, 'B') == TRUE_BOOL);
-	TEST(evaluateCond(test, '8') == FALSE_BOOL);
-	cleanCondNode(test);
-}
-
-static void testEvaluateCondBranch() {
-	CondNode *test = getTestEvalBranchCond();
-	TEST(evaluateCond(test, '\t') == TRUE_BOOL);
-	TEST(evaluateCond(test, '3') == FALSE_BOOL);
-	cleanCondNode(test);
-}
-
-static void testEvaluateCondInvalid() {
-	CondNode *test = getTestEvalInvalidCond();
-	TEST(evaluateCond(test, 'a') == FALSE_BOOL);
-	TEST(evaluateCond(test, 'Z') == FALSE_BOOL);
-	cleanCondNode(test);
-}
-
-static CondNode *getTestEvalLeafCond() {
-	return newCondNode(isWordChar, '\0', '\0', YES_NEGATION);
-}
-
-static CondNode *getTestEvalLinkCond() {
-	CondNode *setup1 = newCondNode(isWhitespace, '\0', '\0',
-		YES_NEGATION);
-	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
-		YES_NEGATION);
 	return mergeNodes(setup1, setup2, AND_OPERATION);
 }
 
-static CondNode *getTestEvalBranchCond() {
-	CondNode *setup1 = newCondNode(isWhitespace, '\0', '\0',
+static TEST_CASE(DiffNegationTagEquivalence) {
+	COMPARE_TEST(CondNode *, DiffNegTagEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		USE_RES(EqvDiffNegTagLeafNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, EqvDiffNegTagLeafNode, void) {
+	return newCondNode(equalsChar, '%', '\0', YES_NEGATION);
+}
+
+static TEST_CASE(LinkWithLeafEquivalence) {
+	COMPARE_TEST(CondNode *, LinkWithLeafEquivalence,
+		USE_RES(EqvLinkCondNode,),
+		USE_RES(EqvLeafCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_CASE(LeafWithLinkEquivalence) {
+	COMPARE_TEST(CondNode *, LeafWithLinkEquivalence,
+		USE_RES(EqvLeafCondNode,),
+		USE_RES(EqvLinkCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_CASE(LinkWithBranchEquivalence) {
+	COMPARE_TEST(CondNode *, LinkWithBranchEquivalence,
+		USE_RES(EqvLinkCondNode,),
+		USE_RES(EqvBranchCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
+}
+
+static TEST_RES(CondNode *, EqvBranchCondNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, '%', '\0',
 		NO_NEGATION);
 	CondNode *setup2 = newCondNode(isDigitChar, '\0', '\0',
 		NO_NEGATION);
-	CondNode *setup3 = mergeNodes(setup1, setup2,
-		OR_OPERATION);
-	CondNode *setup4 = newCondNode(equalsChar, '3', '\0',
-		YES_NEGATION);
+	CondNode *setup3 = mergeNodes(setup1, setup2, OR_OPERATION);
+	CondNode *setup4 = newCondNode(isWordChar, '\0', '\0',
+		NO_NEGATION);
 	return mergeNodes(setup3, setup4, AND_OPERATION);
 }
 
-static CondNode *getTestEvalInvalidCond() {
-	return newCondNode(inRangeChar, 'a', 'Z', NO_NEGATION);
+static TEST_CASE(BranchWithLinkEquivalence) {
+	COMPARE_TEST(CondNode *, BranchWithLinkEquivalence,
+		USE_RES(EqvBranchCondNode,),
+		USE_RES(EqvLinkCondNode,),
+		isEquivalent, FALSE_BOOL,
+		cleanCondNode);
 }
+
+static TEST_CASE(LeafEvaluation) {
+	CondNode *testLeafEvaluation = USE_RES(EvlLeafCondNode,);
+	TEST(evaluateCond(testLeafEvaluation, 'G') == TRUE_BOOL);
+	TEST(evaluateCond(testLeafEvaluation, '}') == TRUE_BOOL);
+	TEST(evaluateCond(testLeafEvaluation, 'p') == FALSE_BOOL);
+	cleanCondNode(testLeafEvaluation);
+}
+
+static TEST_RES(CondNode *, EvlLeafCondNode, void) {
+	return newCondNode(inRangeChar, 'a', 'z', YES_NEGATION);
+}
+
+static TEST_CASE(LinkEvaluation) {
+	CondNode *testLinkEvaluation = USE_RES(EvlLinkCondNode,);
+	TEST(evaluateCond(testLinkEvaluation, 'a') == TRUE_BOOL);
+	TEST(evaluateCond(testLinkEvaluation, 'b') == TRUE_BOOL);
+	TEST(evaluateCond(testLinkEvaluation, 'c') == TRUE_BOOL);
+	TEST(evaluateCond(testLinkEvaluation, 'd') == FALSE_BOOL);
+	cleanCondNode(testLinkEvaluation);
+}
+
+static TEST_RES(CondNode *, EvlLinkCondNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, 'a', '\0',
+		NO_NEGATION);
+	CondNode *setup2 = newCondNode(equalsChar, 'b', '\0',
+		NO_NEGATION);
+	CondNode *setup3 = newCondNode(equalsChar, 'c', '\0',
+		NO_NEGATION);
+	CondNode *setup4 = mergeNodes(setup1, setup2, OR_OPERATION);
+	return mergeNodes(setup3, setup4, OR_OPERATION);
+}
+
+static TEST_CASE(BranchEvaluation) {
+	CondNode *testBranchEvaluation = USE_RES(EvlBranchCondNode,);
+	TEST(evaluateCond(testBranchEvaluation, 'a') == TRUE_BOOL);
+	TEST(evaluateCond(testBranchEvaluation, 'b') == TRUE_BOOL);
+	TEST(evaluateCond(testBranchEvaluation, 'c') == TRUE_BOOL);
+	TEST(evaluateCond(testBranchEvaluation, 'd') == FALSE_BOOL);
+	cleanCondNode(testBranchEvaluation);
+}
+
+static TEST_RES(CondNode *, EvlBranchCondNode, void) {
+	CondNode *setup1 = newCondNode(equalsChar, 'a', '\0',
+		NO_NEGATION);
+	CondNode *setup2 = newCondNode(equalsChar, 'b', '\0',
+		NO_NEGATION);
+	CondNode *setup3 = mergeNodes(setup1, setup2, OR_OPERATION);
+	CondNode *setup4 = newCondNode(equalsChar, 'c', '\0',
+		NO_NEGATION);
+	return mergeNodes(setup3, setup4, OR_OPERATION);
+}
+#endif

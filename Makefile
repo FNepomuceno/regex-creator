@@ -1,18 +1,17 @@
 .PHONY: all clean todo test redo
 
 files_regex := regex/graphregex.c regex/regex.c \
-	regex/chartyperegex.c \
-	testing.c utils/bool.c
+	utils/chartype.c utils/bool.c utils/test.c
 files_condition := condition/builder.c condition/parsestring.c \
-	condition/stringtype.c condition/maker.c condition/node.c \
+	condition/maker.c condition/node.c \
 	condition/list.c condition/tags.c utils/bool.c \
 	condition/function/data.c condition/function/info.c \
-	condition/condition.c
+	condition/condition.c utils/chartype.c utils/test.c
 flags_lenient := -Wall -g
 flags_strict :=-Wall -Werror -g
-group := regex
+group := condition
 files := $(condition_files)
-flagtype := lenient
+flagtype := strict
 
 ifeq ($(group), regex)
 	files := $(files_regex)
@@ -38,8 +37,8 @@ todo:
 	@grep TODO *.c */*.c */*/*.c;:
 
 test:
-	@gcc $(files) $(flags) -o Test
-	@valgrind --leak-check=full ./Test | grep FAILED;:
+	@time gcc $(files) $(flags) -o Test
+	@time valgrind --leak-check=full ./Test | grep FAILED;:
 	@rm Test
 
 clean:

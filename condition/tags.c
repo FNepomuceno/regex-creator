@@ -1,4 +1,5 @@
 #include "tags.h"
+#include "../utils/bool.h"
 
 #define INVALID_TAG -2
 
@@ -52,6 +53,16 @@ const NegationTag *negateNegationTag(const NegationTag *tag) {
 	}
 	if(tag == NO_NEGATION) {
 		return YES_NEGATION;
+	}
+	return INVALID_NEGATION;
+}
+
+const NegationTag *getNegationTag(int bool_val) {
+	if(bool_val == TRUE_BOOL) {
+		return YES_NEGATION;
+	}
+	if(bool_val == FALSE_BOOL) {
+		return NO_NEGATION;
 	}
 	return INVALID_NEGATION;
 }

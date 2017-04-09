@@ -1,11 +1,13 @@
 #define CONDITION_PACKAGE
+#define CONDITION_PARSESTRING_MODULE
 
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include "stringtype.h"
 #include "../testing.h"
+#include "parsestring.h"
 #include "../utils/bool.h"
+#include "../utils/chartype.h"
 #include "../utils/test.h"
 
 char *INVALID_STRING = "";
@@ -16,23 +18,21 @@ void cleanParseString(char *str) {
 	}
 }
 
-static char *newSingleCharParseString();
-static char *newLinkedDataParseString(char *str);
 char *getParseString(char *str) {
-	if(isEmptyCharString(str) == TRUE_BOOL) {
+	int length = lengthOfString(str);
+	if(hasNoChar(str, length) == TRUE_BOOL) {
 		return INVALID_STRING;
 	}
-	if(isLoneCharString(str) == TRUE_BOOL ||
-			isEscapedCharString(str) == TRUE_BOOL) {
+	if(isParseSingleChar(str, length) == TRUE_BOOL ||
+			isEscapedChar(str, length) == TRUE_BOOL) {
 		return newSingleCharParseString();
 	}
-	if(isClosedBracketExpr(str) == FALSE_BOOL) {
+	if(charClassLength(str, length) != length) {
 		return INVALID_STRING;
 	}
-	return newLinkedDataParseString(str);
+	return newLinkedDataParseString(str, length);
 }
 
-static char *newParseStringBase(int length);
 static char *newSingleCharParseString() {
 	return newParseStringBase(1);
 }
@@ -44,16 +44,14 @@ static char *newParseStringBase(int length) {
 	return result;
 }
 
-static char *setOrLink(char *str, int size);
-static char *setAndLink(char *str, int size);
-static char *newLinkedDataParseString(char *str) {
-	int amt_data = getAmtDataInCharClass(str);
+static char *newLinkedDataParseString(char *str, int length) {
+	int amt_data = amountDataInCharClass(str, length);
 	if(amt_data <= 0) return INVALID_STRING;
 
 	char *result = newParseStringBase(2*amt_data-1);
-	if(isCharClass(str) == TRUE_BOOL) {
+	if(hasCharClass(str, length) == TRUE_BOOL) {
 		return setOrLink(result, 2*amt_data);
-	} else if(isNegatedCharClass(str) == TRUE_BOOL) {
+	} else if(hasNegatedCharClass(str, length) == TRUE_BOOL) {
 		return setAndLink(result, 2*amt_data);
 	}
 	return INVALID_STRING;
@@ -75,106 +73,109 @@ static char *setAndLink(char *str, int size) {
 	return str;
 }
 
-void testGetParseString();
-#ifdef TEST_CONDITION_PARSESTRING
+#ifdef TESTING_CONDITION_PARSESTRING
+#ifdef TEST_THIS
 int main() {
-	testGetParseString();
+	USE_CASE(GetParseString);
 	return 0;
 }
 #endif
 
-static void testGetParseStringNull();
-static void testGetParseStringSingleChar();
-static void testGetParseStringCharCategory();
-static void testGetParseStringSimpleCharClass();
-static void testGetParseStringComplexCharClass();
-void testGetParseString() {
-	testGetParseStringNull();
-	testGetParseStringSingleChar();
-	testGetParseStringCharCategory();
-	testGetParseStringSimpleCharClass();
-	testGetParseStringComplexCharClass();
+TEST_CASE(GetParseString) {
+	USE_CASE(GetParseStringNull);
+	USE_CASE(GetParseStringSingleChar);
+	USE_CASE(GetParseStringCharCategory);
+	USE_CASE(GetParseStringSimpleCharClass);
+	USE_CASE(GetParseStringComplexCharClass);
 }
 
-static void testGetParseStringNull() {
-	char *test1 = getParseString(NULL);
-	TEST(strcmp(test1, INVALID_STRING) == 0);
-	cleanParseString(test1);
-
-	char *test2 = getParseString("");
-	TEST(strcmp(test2, INVALID_STRING) == 0);
-	cleanParseString(test2);
+static TEST_CASE(GetParseStringNull) {
+	COMPARE_TEST(char *, Null,
+		getParseString(NULL),
+		INVALID_STRING,
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, Nil,
+		getParseString(""),
+		INVALID_STRING,
+		strcmp, 0,
+		cleanParseString);
 }
 
-static void testGetParseStringSingleChar() {
-	char *test1 = getParseString("a");
-	char *expected1 = "#";
-	TEST(strcmp(test1, expected1) == 0);
-	cleanParseString(test1);
-
-	char *test2 = getParseString("\\\\");
-	char *expected2 = "#";
-	TEST(strcmp(test2, expected2) == 0);
-	cleanParseString(test2);
-
-	char *test3 = getParseString("\\.");
-	char *expected3 = "#";
-	TEST(strcmp(test3, expected3) == 0);
-	cleanParseString(test3);
+static TEST_CASE(GetParseStringSingleChar) {
+	COMPARE_TEST(char *, LoneChar,
+		getParseString("a"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, EscapedLiteral,
+		getParseString("\\g"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, EscapedMeta,
+		getParseString("\\."),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
 }
 
-static void testGetParseStringCharCategory() {
-	char *test1 = getParseString("\\d");
-	char *expected1 = "#";
-	TEST(strcmp(test1, expected1) == 0);
-	cleanParseString(test1);
-
-	char *test2 = getParseString("\\D");
-	char *expected2 = "#";
-	TEST(strcmp(test2, expected2) == 0);
-	cleanParseString(test2);
-
-	char *test3 = getParseString("\\w");
-	char *expected3 = "#";
-	TEST(strcmp(test3, expected3) == 0);
-	cleanParseString(test3);
+static TEST_CASE(GetParseStringCharCategory) {
+	COMPARE_TEST(char *, DigitCategory,
+		getParseString("\\d"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, NegatedDigitCategory,
+		getParseString("\\D"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, WordCategory,
+		getParseString("\\w"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
 }
 
-static void testGetParseStringSimpleCharClass() {
-	char *test1 = getParseString("[C]");
-	char *expected1 = "#";
-	TEST(strcmp(test1, expected1) == 0);
-	cleanParseString(test1);
-
-	char *test2 = getParseString("[^q]");
-	char *expected2 = "#";
-	TEST(strcmp(test2, expected2) == 0);
-	cleanParseString(test2);
-
-	char *test3 = getParseString("[R-b]");
-	char *expected3 = "#";
-	TEST(strcmp(test3, expected3) == 0);
-	cleanParseString(test3);
-
-	char *test4 = getParseString("[^\\d]");
-	char *expected4 = "#";
-	TEST(strcmp(test4, expected4) == 0);
-	cleanParseString(test4);
+static TEST_CASE(GetParseStringSimpleCharClass) {
+	COMPARE_TEST(char *, SingleCharClass,
+		getParseString("[C]"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, NegatedSingleCharClass,
+		getParseString("[^q]"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, SingleRangeClass,
+		getParseString("[R-b]"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, EscapedCharClass,
+		getParseString("[^\\d]"),
+		USE_RES(CopyStr,"#"),
+		strcmp, 0,
+		cleanParseString);
 }
 
-static void testGetParseStringComplexCharClass() {
-	char *test1 = getParseString("[eZ]");
-	char *expected1 = "|##";
-	TEST(strcmp(test1, expected1) == 0);
-	cleanParseString(test1);
-
-	char *test2 = getParseString("[-#-%!]");
-	char *expected2 = "|#|##";
-	TEST(strcmp(test2, expected2) == 0);
-	cleanParseString(test2);
-
-	char *test3 = getParseString("[^Wua-h?]");
-	char *expected3 = "&&&####";
-	TEST(strcmp(test3, expected3) == 0);
-	cleanParseString(test3);
+static TEST_CASE(GetParseStringComplexCharClass) {
+	COMPARE_TEST(char *, DoubleLetterClass,
+		getParseString("[eZ]"),
+		USE_RES(CopyStr,"|##"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, ClassWithDash,
+		getParseString("[-#-%!]"),
+		USE_RES(CopyStr,"|#|##"),
+		strcmp, 0,
+		cleanParseString);
+	COMPARE_TEST(char *, NegatedComplexClass,
+		getParseString("[^Wua-h?]"),
+		USE_RES(CopyStr,"&&&####"),
+		strcmp, 0,
+		cleanParseString);
 }
+#endif
